@@ -6,6 +6,7 @@ from sklearn.utils import indexable, check_random_state, shuffle
 import copy
 
 
+
 def sortByLabel(X, y):
     sortedIndex = y.argsort()
     return X[sortedIndex], y[sortedIndex]
@@ -39,32 +40,25 @@ def dbsvc(X, y, k, rng=None):
     counts = counts[1]
     counts = np.cumsum(counts)
     indexShift = np.append(0, counts[:-1])
-    outIndex = []
-    #print(counts)
     
-    # X, y = dataSlicing(X, y, counts) 
-
-    distanceMatrix = pairwise_distances(X, metric='euclidean')
+    X, y = dataSlicing(X, y, counts) 
 
     i = 0
     indexList = []
-    while i < len(indexShift):
-        start = indexShift[i]
-        finish = counts[i]
-        subMatrix = distanceMatrix[start:finish, start:finish]
-        j = 0
-        # minIndex = 1 #to test
-        minIndex = (rng.randint(len(subMatrix[0])))
-        indexList.append(minIndex)
-        while j < len(subMatrix[0])-1:
-            zeroIndex = minIndex
-            minIndex = np.argmin(np.ma.masked_where(subMatrix[minIndex] == 0, subMatrix[minIndex]))
-            subMatrix[zeroIndex, :] = 0
-            subMatrix[:, zeroIndex] = 0
-            indexList.append(minIndex)
-            j += 1
-        i += 1
 
+    for eachClass in X:
+        distanceMatrix = pairwise_distances(eachClass, metric='euclidean')
+        minIndex = 1 #to test
+        # minIndex = (rng.randint(len(distanceMatrix[0])))
+        indexList.append(minIndex)
+        i = 0
+        while i < len(distanceMatrix[0])-1:
+            zeroIndex = minIndex
+            minIndex = np.argmin(np.ma.masked_where(distanceMatrix[minIndex] == 0, distanceMatrix[minIndex]))
+            distanceMatrix[zeroIndex, :] = 0
+            distanceMatrix[:, zeroIndex] = 0
+            indexList.append(minIndex)
+            i += 1
 
     counts = np.append(0, counts)
     start = counts[:-1]
@@ -77,7 +71,6 @@ def dbsvc(X, y, k, rng=None):
     folds = [[] for _ in range(k)] #list with kfolds (empty)
     folds = circuilarAppend(indexList, folds, k)
 
-    print(folds)
     return(folds) #return indexes
 
 

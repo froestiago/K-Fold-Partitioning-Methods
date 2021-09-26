@@ -12,6 +12,28 @@ from sklearn.preprocessing import StandardScaler
 
 from pmlb import fetch_data
 
+import time
+
+def timing_test():
+    np.random.seed(42)
+
+    blob_centers = np.array(
+        [[ 0.2,  2.3],      #y = 0
+         [-1.5 ,  2.3],     #y = 1
+         [-2.8,  1.8],      #y = 2
+         [-2.8,  2.8],      #y = 3
+         [-2.8,  1.3]])     #y = 4
+    blob_std = np.array([0.4, 0.3, 0.1, 0.1, 0.1])
+
+    X, y = make_blobs(n_samples=25000, centers=blob_centers,
+                  cluster_std=blob_std, shuffle=True)
+    
+    startTimer = time.time()
+    folds = DBSVC.dbsvc(X, y, 5)
+    endTimer = time.time()
+    totalTime = endTimer - startTimer
+    print('O tempo de execução da função foi de: ', totalTime, 's')
+    # print(folds)
 
 def test_dbscv_splitter():
     print("Testing DBSCVSplitter class...")
@@ -32,7 +54,6 @@ def test_dbscv_splitter():
     splitter = DBSVC.DBSCVSplitter(n_splits=5, random_state=random_state)
     for ind_train, ind_test in splitter.split(X, y):
         print("Train indices: {} Test indices: {}".format(ind_train, ind_test))
-
 
 def sklearn_cv_example():
     print("Example of using the DBSCV splitter together with sklearn.")
@@ -57,7 +78,6 @@ def sklearn_cv_example():
     print("Scores: ", scores)
     print("Mean {} Median {} STD {}".format(np.mean(scores), np.median(scores), np.std(scores)))
 
-
 def main():
 
     blob_centers = np.array(
@@ -70,7 +90,7 @@ def main():
 
     # X, y = make_blobs(n_samples=5000, centers=blob_centers, cluster_std=blob_std, shuffle=True)   
     # X, y = load_breast_cancer(return_X_y = True)
-    X, y = fetch_data('mushroom', return_X_y=True)
+    # X, y = fetch_data('mushroom', return_X_y=True)
     n_splits = 5
 
     splitter_dbscv = DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False)
@@ -94,6 +114,7 @@ def main():
     print("Mean {} Median {} STD {}".format(np.mean(scores), np.median(scores), np.std(scores)))
 
 
-
 if __name__ == '__main__':
-    main()
+    timing_test()
+    # main()
+
