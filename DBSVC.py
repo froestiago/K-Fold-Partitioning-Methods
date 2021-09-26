@@ -77,6 +77,7 @@ def dbsvc(X, y, k, rng=None):
     folds = [[] for _ in range(k)] #list with kfolds (empty)
     folds = circuilarAppend(indexList, folds, k)
 
+    print(folds)
     return(folds) #return indexes
 
 
