@@ -64,6 +64,11 @@ def dbsvc(X, y, k, rng=None):
     start = counts[:-1]
     finish = counts[1:]
 
+
+    # Isso aqui é só um comentário
+    # mas fingi que eu fiz uma baita merda no código
+
+
     #sum indexShift on each position
     for i, j, x in zip(start, finish, indexShift):
         indexList[i:j] += x
