@@ -18,14 +18,14 @@ def timing_test():
     np.random.seed(42)
 
     blob_centers = np.array(
-        [[ 0.2,  2.3],      #y = 0
-         [-1.5 ,  2.3],     #y = 1
-         [-2.8,  1.8],      #y = 2
-         [-2.8,  2.8],      #y = 3
-         [-2.8,  1.3]])     #y = 4
-    blob_std = np.array([0.4, 0.3, 0.1, 0.1, 0.1])
+        [[ 0.2,  2.3, -1.5],    #y = 0
+         [-1.5,  2.3, 1.8],     #y = 1
+         [-2.8,  1.8, 1.3],     #y = 2
+         [-2.8,  2.8, -2.8],    #y = 3
+         [-2.8,  1.3, 2.3]])    #y = 4
+    blob_std = np.array([0.7, 0.3, 0.6, 0.3, 0.2])
 
-    X, y = make_blobs(n_samples=25000, centers=blob_centers,
+    X, y = make_blobs(n_samples=5000, centers=blob_centers,
                   cluster_std=blob_std, shuffle=True)
     
     startTimer = time.time()
@@ -88,7 +88,7 @@ def main():
          [-2.8,  1.3, 2.3]])    #y = 4
     blob_std = np.array([0.7, 0.3, 0.6, 0.3, 0.2])
 
-    # X, y = make_blobs(n_samples=5000, centers=blob_centers, cluster_std=blob_std, shuffle=True)   
+    X, y = make_blobs(n_samples=50000, centers=blob_centers, cluster_std=blob_std, shuffle=True)   
     # X, y = load_breast_cancer(return_X_y = True)
     # X, y = fetch_data('mushroom', return_X_y=True)
     n_splits = 5
@@ -115,6 +115,6 @@ def main():
 
 
 if __name__ == '__main__':
-    timing_test()
-    # main()
+    # timing_test()
+    main()
 
