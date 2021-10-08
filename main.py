@@ -88,7 +88,7 @@ def main():
          [-2.8,  1.3, 2.3]])    #y = 4
     blob_std = np.array([0.7, 0.3, 0.6, 0.3, 0.2])
 
-    X, y = make_blobs(n_samples=50000, centers=blob_centers, cluster_std=blob_std, shuffle=True)   
+    X, y = make_blobs(n_samples=1000, centers=blob_centers, cluster_std=blob_std, shuffle=True)   
     # X, y = load_breast_cancer(return_X_y = True)
     # X, y = fetch_data('mushroom', return_X_y=True)
     n_splits = 5
