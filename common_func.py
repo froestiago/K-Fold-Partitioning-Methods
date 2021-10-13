@@ -22,3 +22,12 @@ def data_slicing_by_label(X, y, indexes):
     y_out = y_out[:-1]
 
     return X_out, y_out
+
+def aux_indexes(y):
+    counts = np.unique(y, return_counts=True)
+    slicing_indexes = np.cumsum(counts[1])
+    segment_shift = np.append(0, slicing_indexes)
+    start_of_segment = segment_shift[:-1]
+    end_of_segment = segment_shift[1:]
+
+    return slicing_indexes, segment_shift, start_of_segment, end_of_segment

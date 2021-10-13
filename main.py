@@ -48,10 +48,16 @@ def test_dbscv_splitter():
          [-2.8, 1.3]])  # y = 4
     blob_std = np.array([0.4, 0.3, 0.1, 0.1, 0.1])
 
-    X, y = make_blobs(n_samples=25, centers=blob_centers,
+    X, y = make_blobs(n_samples=15, centers=blob_centers,
                       cluster_std=blob_std, shuffle=True, random_state=random_state)
 
+    print(X)
+    
     splitter = DBSVC.DBSCVSplitter(n_splits=5, random_state=random_state)
+    for ind_train, ind_test in splitter.split(X, y):
+        print("Train indices: {} Test indices: {}".format(ind_train, ind_test))
+    print("\nBAD CASE\n")
+    splitter = DBSVC.DBSCVSplitter(n_splits=5, random_state=random_state, bad_case=True)
     for ind_train, ind_test in splitter.split(X, y):
         print("Train indices: {} Test indices: {}".format(ind_train, ind_test))
 
@@ -88,22 +94,29 @@ def main():
          [-2.8,  1.3, 2.3]])    #y = 4
     blob_std = np.array([0.7, 0.3, 0.6, 0.3, 0.2])
 
-    X, y = make_blobs(n_samples=1000, centers=blob_centers, cluster_std=blob_std, shuffle=True)   
+    X, y = make_blobs(n_samples=10, centers=blob_centers, cluster_std=blob_std, shuffle=True)   
     # X, y = load_breast_cancer(return_X_y = True)
     # X, y = fetch_data('mushroom', return_X_y=True)
     n_splits = 5
 
-    splitter_dbscv = DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False)
+    bad_case_splitter_dbscv = DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=True)
+    splitter_dbscv = DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False)
     splitter_stratified_cv = StratifiedKFold(n_splits=n_splits, shuffle=False)
 
     pipeline = Pipeline([
         ('scaler', StandardScaler()),
-        ('clf', LogisticRegression())
+        ('clf', RandomForestClassifier())
     ])
 
     scores = cross_val_score(pipeline, X, y=y, cv=splitter_dbscv)
     print("-------------------")
     print("Results with DBSCV:")
+    print("Scores: ", scores)
+    print("Mean {} Median {} STD {}".format(np.mean(scores), np.median(scores), np.std(scores)))
+
+    scores = cross_val_score(pipeline, X, y=y, cv=bad_case_splitter_dbscv)
+    print("-------------------")
+    print("Results with bad case DBSCV:")
     print("Scores: ", scores)
     print("Mean {} Median {} STD {}".format(np.mean(scores), np.median(scores), np.std(scores)))
 
@@ -116,5 +129,6 @@ def main():
 
 if __name__ == '__main__':
     # timing_test()
-    main()
+    # main()
+    test_dbscv_splitter()
 
