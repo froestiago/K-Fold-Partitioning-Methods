@@ -19,7 +19,7 @@ def dbsvc(X, y, k, rng=None, bad_case = False):
     X, y = data_slicing_by_label(X, y, slicing_index)
 
     i = 0
-    index_list = []
+    index_list = [] #to be returned
 
     for each_class in X:
         distance_matrix = pairwise_distances(each_class, metric='euclidean')
@@ -44,7 +44,6 @@ def dbsvc(X, y, k, rng=None, bad_case = False):
 
     folds = [[] for _ in range(k)] #list with kfolds (empty)
     folds = circular_append(index_list, folds, k)
-    print(index_list) # to delete
     return(folds) #return indexes
 
 
@@ -98,7 +97,6 @@ class DBSCVSplitter:
             folds = dbsvc(X, y, self.n_splits, rng=rng, bad_case=False)
         else:
             folds = dbsvc(X, y, self.n_splits, rng=rng, bad_case=True)
-
 
         for k in range(self.n_splits):
             test_fold_index = self.n_splits - k - 1  # start by using the last fold as the test fold

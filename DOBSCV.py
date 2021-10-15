@@ -1,10 +1,18 @@
-import numpy as np
-from scipy.spatial.kdtree import distance_matrix
-from sklearn.datasets import make_blobs
-from sklearn.metrics import pairwise_distances
-from common_func import aux_indexes, aux_indexes, sort_by_label, circular_append, data_slicing_by_label
+# import numpy as np
+# from pandas.core.indexing import need_slice
 
-np.random.RandomState(42)
+# from scipy.spatial.kdtree import distance_matrix
+# from sklearn.datasets import make_blobs
+# from sklearn.metrics import pairwise_distances
+# from common_func import aux_indexes, aux_indexes, sort_by_label, circular_append, data_slicing_by_label
+
+import numpy as np
+from pandas.core.indexing import need_slice
+
+from sklearn.metrics import pairwise_distances
+from sklearn.utils import indexable, check_random_state, shuffle
+from common_func import aux_indexes, sort_by_label, circular_append, data_slicing_by_label
+import copy
 
 def dobscv(X, y, k, rng=None, bad_case = False):
     if rng is None:
@@ -22,21 +30,19 @@ def dobscv(X, y, k, rng=None, bad_case = False):
     for each_class in X:
         distance_matrix = pairwise_distances(each_class, metric='euclidean')
         i = len(each_class)
-        print('length: ', i)
         possible_rand = np.arange(len(distance_matrix[0]))
-        print("NEW CLASS\n")
         while i > 0:
-            print(distance_matrix)
             n = k
-            print("\tnew index")
             k_closest = []
             chosen_instance = np.random.choice(possible_rand)
-            print('STARTING INDEX = ', chosen_instance)
-            
             sorted_distances = np.sort(distance_matrix[chosen_instance])
-            index_sorted_distances = np.argsort(distance_matrix[chosen_instance])
             
-            print('Sorted: ', sorted_distances)
+            if bad_case == True:
+                sorted_distances = sorted_distances[::-1]
+
+            
+            index_sorted_distances = np.argsort(distance_matrix[chosen_instance])
+
             if len(possible_rand) < k:
                 n = len(possible_rand)
 
@@ -48,10 +54,6 @@ def dobscv(X, y, k, rng=None, bad_case = False):
                 distance_matrix[:, zero_column_line] = np.nan
             
             possible_rand = np.setdiff1d(possible_rand, k_closest)
-            print('K - Closest: ', k_closest)
-            print('Possible next element: ', possible_rand)
-            #find how many nan there is
-
 
             index_list.extend(k_closest)
             i -= n
@@ -62,24 +64,72 @@ def dobscv(X, y, k, rng=None, bad_case = False):
 
     folds = [[] for _ in range(k)] #list with kfolds (empty)
     folds = circular_append(index_list, folds, k)
-    
-    print(folds)
-    print(len(index_list))
 
-def main():
-    print("Testing DBSCVSplitter class...")
+    return folds
 
-    random_state = np.random.RandomState(42)
+class DOBSCVSplitter:
+    def __init__(self, n_splits=5, random_state=None, shuffle=True, bad_case=False):
+        """Split dataset indices according to the DBSCV technique.
 
-    blob_centers = np.array(
-        [[0.2, 2.3],  # y = 0
-         [-1.5, 2.3],  # y = 1
-         [-2.8, 1.8]])  # y = 2
-    blob_std = np.array([0.4, 0.3, 0.1])
+        Parameters
+        ----------
+        n_splits : int
+            Number of splits to generate. In this case, this is the same as the K in a K-fold cross validation.
+        random_state : any
+            Seed or numpy RandomState. If None, use the singleton RandomState used by numpy.
+        shuffle : bool
+            Shuffle dataset before splitting.
+        """
+        # in sklearn, generally, we do not check the arguments in the initialization function.
+        # There is a reason for this.
+        self.n_splits = n_splits
+        self.random_state = random_state  # used for enabling the user to reproduce the results
+        self.shuffle = shuffle
+        self.bad_case = bad_case
 
-    X, y = make_blobs(n_samples=17, centers=blob_centers,
-                      cluster_std=blob_std, shuffle=True, random_state=random_state)
+    def split(self, X, y=None, groups=None):
+        """Generate indices to split data according to the DBSCV technique.
 
-    folds = dobscv(X, y, k = 3)
-if __name__ == '__main__':
-    main()
+        Parameters
+        ----------
+        X : array-like object of shape (n_samples, n_features)
+            Training data.
+        y : array-like object of shape (n_samples, )
+            Target variable corresponding to the training data.
+        groups : None
+            Not implemented. It is here for compatibility.
+
+        Yields
+        -------
+            Split with train and test indexes.
+        """
+        if groups:
+            raise NotImplementedError("groups functionality is not implemented.")
+
+        # just some validations that sklearn uses
+        X, y = indexable(X, y)
+        rng = check_random_state(self.random_state)
+
+        if self.shuffle:
+            X, y = shuffle(X, y, random_state=rng)
+
+        if self.bad_case == False:
+            folds = dobscv(X, y, self.n_splits, rng=rng, bad_case=False)
+        else:
+            folds = dobscv(X, y, self.n_splits, rng=rng, bad_case=True)
+
+
+        for k in range(self.n_splits):
+            test_fold_index = self.n_splits - k - 1  # start by using the last fold as the test fold
+            ind_train = []
+            ind_test = []
+            for fold_index in range(self.n_splits):
+                if fold_index != test_fold_index:
+                    ind_train += copy.copy(folds[fold_index])
+                else:
+                    ind_test = copy.copy(folds[fold_index])
+
+            yield ind_train, ind_test
+
+    def get_n_splits(self, X=None, y=None, groups=None):
+        return self.n_splits

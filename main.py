@@ -1,4 +1,5 @@
 import DBSVC
+import DOBSCV
 import numpy as np
 from sklearn.datasets import make_blobs, load_iris, load_digits, load_breast_cancer
 from sklearn.pipeline import Pipeline
@@ -61,6 +62,26 @@ def test_dbscv_splitter():
     for ind_train, ind_test in splitter.split(X, y):
         print("Train indices: {} Test indices: {}".format(ind_train, ind_test))
 
+def test_dobscv_splitter():
+    print("Testing DBSCVSplitter class...")
+
+    random_state = np.random.RandomState(0)
+
+    blob_centers = np.array(
+        [[0.2, 2.3],  # y = 0
+         [-1.5, 2.3],  # y = 1
+         [-2.8, 1.8],  # y = 2
+         [-2.8, 2.8],  # y = 3
+         [-2.8, 1.3]])  # y = 4
+    blob_std = np.array([0.4, 0.3, 0.1, 0.1, 0.1])
+
+    X, y = make_blobs(n_samples=28, centers=blob_centers,
+                      cluster_std=blob_std, shuffle=True, random_state=random_state)
+    
+    splitter = DOBSCV.DOBSCVSplitter(n_splits=5, random_state=random_state)
+    for ind_train, ind_test in splitter.split(X, y):
+        print("Train indices: {} Test indices: {}".format(ind_train, ind_test))
+
 def sklearn_cv_example():
     print("Example of using the DBSCV splitter together with sklearn.")
     n_splits = 2
@@ -94,19 +115,36 @@ def main():
          [-2.8,  1.3, 2.3]])    #y = 4
     blob_std = np.array([0.7, 0.3, 0.6, 0.3, 0.2])
 
-    X, y = make_blobs(n_samples=10, centers=blob_centers, cluster_std=blob_std, shuffle=True)   
-    # X, y = load_breast_cancer(return_X_y = True)
+    # X, y = make_blobs(n_samples=25, centers=blob_centers, cluster_std=blob_std, shuffle=True)   
+    X, y = load_breast_cancer(return_X_y = True)
     # X, y = fetch_data('mushroom', return_X_y=True)
     n_splits = 5
 
     bad_case_splitter_dbscv = DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=True)
     splitter_dbscv = DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False)
+    
+    bad_case_splitter_dobscv = DOBSCV.DOBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=True)
+    splitter_dobscv = DOBSCV.DOBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False)
+
     splitter_stratified_cv = StratifiedKFold(n_splits=n_splits, shuffle=False)
 
     pipeline = Pipeline([
         ('scaler', StandardScaler()),
-        ('clf', RandomForestClassifier())
+        ('clf', LogisticRegression())
     ])
+
+    scores = cross_val_score(pipeline, X, y=y, cv=splitter_dobscv)
+    print("-------------------")
+    print("Results with DOBSCV:")
+    print("Scores: ", scores)
+    print("Mean {} Median {} STD {}".format(np.mean(scores), np.median(scores), np.std(scores)))
+
+    scores = cross_val_score(pipeline, X, y=y, cv=bad_case_splitter_dobscv)
+    print("-------------------")
+    print("Results with bad case DOBSCV:")
+    print("Scores: ", scores)
+    print("Mean {} Median {} STD {}".format(np.mean(scores), np.median(scores), np.std(scores)))
+
 
     scores = cross_val_score(pipeline, X, y=y, cv=splitter_dbscv)
     print("-------------------")
@@ -129,6 +167,7 @@ def main():
 
 if __name__ == '__main__':
     # timing_test()
-    # main()
-    test_dbscv_splitter()
+    main()
+    # test_dbscv_splitter()
+    # test_dobscv_splitter()
 
