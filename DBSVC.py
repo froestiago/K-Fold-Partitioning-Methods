@@ -1,13 +1,12 @@
 import numpy as np
 from pandas.core.indexing import need_slice
-
 from sklearn.metrics import pairwise_distances
 from sklearn.utils import indexable, check_random_state, shuffle
 from common_func import aux_indexes, sort_by_label, circular_append, data_slicing_by_label
 import copy
 
 
-def dbsvc(X, y, k, rng=None, bad_case = False):
+def dbsvc(X, y, k, bad_case = False, rng=None):
     if rng is None:
         rng = np.random.RandomState()
 
@@ -44,6 +43,7 @@ def dbsvc(X, y, k, rng=None, bad_case = False):
 
     folds = [[] for _ in range(k)] #list with kfolds (empty)
     folds = circular_append(index_list, folds, k)
+    # print(folds)
     return(folds) #return indexes
 
 
