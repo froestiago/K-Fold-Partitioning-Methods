@@ -2,7 +2,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from ..splitters import DOBSCV, DBSVC
+from ..splitters import DOBSCV, DBSVC, CBDSCV
 from .loggers import LocalLogger, local_logger_to_long_frame
 
 from joblib import Memory
@@ -30,6 +30,7 @@ def compare_variance(dir_output, run_name=None, **kwargs):
     splitter_methods = [
         DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False, random_state=0),
         DOBSCV.DOBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False, random_state=0),
+        CBDSCV.CBDSCVSplitter(n_splits=n_splits, shuffle=False, random_state=0),
         StratifiedKFold(n_splits=n_splits),
         KFold(n_splits=n_splits),
         StratifiedShuffleSplit(n_splits=n_splits, random_state=0)
@@ -105,8 +106,8 @@ def compare_variance_analysis(path_run: str):
         df = df.drop(df.loc[df['splitter'] == 'StratifiedShuffleSplit'].index)
 
         df = df.replace(
-            to_replace=['DBSCVSplitter', 'DOBSCVSplitter', 'KFold', 'StratifiedKFold'],
-            value=['DBSCV', 'DOBSCV', 'KFold', 'StKFold']
+            to_replace=['DBSCVSplitter', 'DOBSCVSplitter', 'CBDSCVSplitter', 'KFold', 'StratifiedKFold'],
+            value=['DBSCV', 'DOBSCV', 'CBDSCV','KFold', 'StKFold']
         )
 
         df_runs = df.groupby(by=['dataset', 'run', 'splitter', 'classifier', 'metric'], as_index=False)\
@@ -126,7 +127,7 @@ def compare_variance_analysis(path_run: str):
             sns.violinplot(data=df_clf_f_score, y='cv_std', x='splitter', inner='quartile', ax=ax[idx, 1])
             ax[idx, 1].set_title('%s 5-fold CV std' % clf)
             ax[idx, 1].set_ylabel('%s' % metric)
-            ax[idx, 1].set_ylim([0.00, 0.045])
+            ax[idx, 1].set_ylim([0.00, 0.05])
 
         fig.tight_layout()
 
