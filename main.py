@@ -1,3 +1,4 @@
+import argparse
 import DBSVC
 import DOBSCV
 import numpy as np
@@ -14,6 +15,8 @@ from sklearn.preprocessing import StandardScaler
 from pmlb import fetch_data
 
 import time
+from kfoldmethods.experiments import splitters_compare
+
 
 def timing_test():
     np.random.seed(42)
@@ -166,6 +169,19 @@ def main():
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser("k-Fold Partitioning Methods")
+    parser.add_argument("--experiment", type=str, default=None, help="Which experiment to run. Default is %(default)s")
+    parser.add_argument("--dir-runs", type=str, default='./output',
+                        help="Directory where to save results, if any. Default is %(default)s")
+    args = parser.parse_args()
+
+    if args.experiment == 'splitters-compare-train':
+        splitters_compare.compare_variance(args.dir_runs)
+        exit(0)
+    elif args.experiment == 'splitters-compare-analysis':
+        splitters_compare.compare_variance_analysis(args.dir_runs)
+        exit(0)
+
     # timing_test()
     main()
     # test_dbscv_splitter()

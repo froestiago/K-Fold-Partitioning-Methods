@@ -1,5 +1,7 @@
 # pycharm
 .idea
+output/
+cachedir/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
