@@ -8,7 +8,7 @@ from .loggers import LocalLogger, local_logger_to_long_frame
 from joblib import Memory
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import KFold, StratifiedKFold, StratifiedShuffleSplit, cross_val_score, cross_validate, GridSearchCV
-from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_score
+from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_score, confusion_matrix
 from sklearn.datasets import load_iris, load_digits, load_breast_cancer
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import LogisticRegression
@@ -25,7 +25,7 @@ def compare_variance(dir_output, run_name=None, **kwargs):
     memory = Memory(path_cache)
     random_state = 0
     n_splits = 5
-    n_runs = 100
+    n_runs = 10
 
     splitter_methods = [
         DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False, random_state=0),
@@ -35,7 +35,7 @@ def compare_variance(dir_output, run_name=None, **kwargs):
         KFold(n_splits=n_splits),
         StratifiedShuffleSplit(n_splits=n_splits, random_state=0)
     ]
-    datasets = [load_breast_cancer]
+    datasets = [load_breast_cancer, load_iris]
 
     pipeline = Pipeline([('scaler', MinMaxScaler()), ('clf', LogisticRegression())])
     pipeline_params = [
@@ -82,6 +82,7 @@ def compare_variance(dir_output, run_name=None, **kwargs):
                         precision = precision_score(y_r[test], y_pred, average='macro')
                         recall = recall_score(y_r[test], y_pred, average='macro')
                         f1 = f1_score(y_r[test], y_pred, average='macro')
+                        confusion_mat = confusion_matrix(y_r[test], y_pred).tolist()
 
                         ns = '%s/%d/%s/%s' % (ds.__name__, run, splitter.__class__.__name__,
                                               model['clf'].__class__.__name__)
@@ -89,6 +90,7 @@ def compare_variance(dir_output, run_name=None, **kwargs):
                         logger.log_metric(precision, '%s/precision' % ns)
                         logger.log_metric(recall, '%s/recall' % ns)
                         logger.log_metric(f1, '%s/f1' % ns)
+                        logger.log_json(confusion_mat, '%s/confusion_matrix.json' % ns)
 
 
 def compare_variance_analysis(path_run: str):
