@@ -2,8 +2,12 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from pmlb import fetch_data
+
 from ..splitters import DOBSCV, DBSVC, CBDSCV
 from .loggers import LocalLogger, local_logger_to_long_frame
+from ..datasets.pmlb_api import pmlb_get_ds_list
+
 
 from joblib import Memory
 from sklearn.pipeline import Pipeline
@@ -25,17 +29,19 @@ def compare_variance(dir_output, run_name=None, **kwargs):
     memory = Memory(path_cache)
     random_state = 0
     n_splits = 5
-    n_runs = 10
+    n_runs = 20
 
     splitter_methods = [
         DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False, random_state=0),
-        DOBSCV.DOBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False, random_state=0),
+        # DOBSCV.DOBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False, random_state=0),
         CBDSCV.CBDSCVSplitter(n_splits=n_splits, shuffle=False, random_state=0),
         StratifiedKFold(n_splits=n_splits),
         KFold(n_splits=n_splits),
         StratifiedShuffleSplit(n_splits=n_splits, random_state=0)
     ]
-    datasets = [load_breast_cancer, load_iris]
+
+    # datasets = [load_iris, load_breast_cancer, load_digits]
+    datasets = pmlb_get_ds_list(task='classification', n_samples=(1, 2000))
 
     pipeline = Pipeline([('scaler', MinMaxScaler()), ('clf', LogisticRegression())])
     pipeline_params = [
@@ -45,8 +51,12 @@ def compare_variance(dir_output, run_name=None, **kwargs):
         {'clf': [DecisionTreeClassifier(random_state=0)], 'clf__max_depth': [1, 5, 10, 15, 50]}
     ]
 
-    for ds in datasets:
-        X, y = ds(return_X_y=True)
+    for idx_ds, ds in enumerate(datasets[75:]):
+        if ds == 'lymphography':
+            continue
+
+        print("Dataset: %s  [%d/%d]" % (ds, idx_ds+75+1, len(datasets)))
+        X, y = fetch_data(ds, return_X_y=True, local_cache_dir=path_cache)
 
         # this will use cross validation to find the best hyperparameters for each classifier in this dataset
         # it will append to classifiers a estimator with unfitted parameters, but with the best hyperparameters
@@ -68,7 +78,7 @@ def compare_variance(dir_output, run_name=None, **kwargs):
             random_state_sampler = rng_sampler.randint(0, 99999)
             resample_indices = np.arange(0, X.shape[0])
             resample_indices = resample(resample_indices, random_state=random_state_sampler)
-            logger.log_json(resample_indices.tolist(), '%s/indices.json' % ds.__name__)
+            logger.log_json(resample_indices.tolist(), '%s/indices.json' % ds)
 
             X_r = X[resample_indices]
             y_r = y[resample_indices]
@@ -84,7 +94,7 @@ def compare_variance(dir_output, run_name=None, **kwargs):
                         f1 = f1_score(y_r[test], y_pred, average='macro')
                         confusion_mat = confusion_matrix(y_r[test], y_pred).tolist()
 
-                        ns = '%s/%d/%s/%s' % (ds.__name__, run, splitter.__class__.__name__,
+                        ns = '%s/%d/%s/%s' % (ds, run, splitter.__class__.__name__,
                                               model['clf'].__class__.__name__)
                         logger.log_metric(accuracy, '%s/accuracy' % ns)
                         logger.log_metric(precision, '%s/precision' % ns)
@@ -95,6 +105,9 @@ def compare_variance(dir_output, run_name=None, **kwargs):
 
 def compare_variance_analysis(path_run: str):
     path_run_obj = Path(path_run)
+    path_analysis_obj = path_run_obj.parent / 'analysis' / path_run_obj.stem
+    if not path_analysis_obj.exists():
+        path_analysis_obj.mkdir(parents=True, exist_ok=True)
 
     sns.set_theme(style='darkgrid')
 
@@ -102,35 +115,40 @@ def compare_variance_analysis(path_run: str):
         df = local_logger_to_long_frame(
             path_run,
             variables_names=('dataset', 'run', 'splitter', 'classifier', 'metric', 'value'),
-            values_to_ignore=('tb', 'indices.json'),
+            values_to_ignore=('tb', 'indices.json', 'confusion_matrix.json'),
             save_csv=True)
 
         df = df.drop(df.loc[df['splitter'] == 'StratifiedShuffleSplit'].index)
 
         df = df.replace(
             to_replace=['DBSCVSplitter', 'DOBSCVSplitter', 'CBDSCVSplitter', 'KFold', 'StratifiedKFold'],
-            value=['DBSCV', 'DOBSCV', 'CBDSCV','KFold', 'StKFold']
+            value=['DBSCV', 'DOBSCV', 'CBDSCV', 'KFold', 'StKFold']
         )
 
         df_runs = df.groupby(by=['dataset', 'run', 'splitter', 'classifier', 'metric'], as_index=False)\
             .agg(cv_mean=('value', 'mean'), cv_std=('value', 'std'))
 
-        n_clf = len(df_runs['classifier'].unique())
-        fig, ax = plt.subplots(n_clf, 2, figsize=(10, 9))
-        for idx, clf in enumerate(df_runs['classifier'].unique()):
-            metric = 'f1'
-            df_clf_f_score = df_runs.loc[(df_runs['classifier'] == clf) & (df_runs['metric'] == metric)]
+        for idx_ds, dataset in enumerate(df_runs['dataset'].unique()):
+            df_runs_ds = df_runs.loc[df_runs['dataset'] == dataset]
 
-            sns.violinplot(data=df_clf_f_score, y='cv_mean', x='splitter', inner='quartile', ax=ax[idx, 0])
-            ax[idx, 0].set_title('%s 5-fold CV mean' % clf)
-            ax[idx, 0].set_ylabel('%s' % metric)
-            ax[idx, 0].set_ylim([0.925, 1.00])
+            for metric in df_runs_ds['metric'].unique():
+                n_clf = len(df_runs_ds['classifier'].unique())
+                fig, ax = plt.subplots(n_clf, 2, figsize=(7.5, 6.8))
+                for idx, clf in enumerate(df_runs_ds['classifier'].unique()):
+                    df_clf_f_score = df_runs_ds.loc[(df_runs_ds['classifier'] == clf)
+                                                    & (df_runs_ds['metric'] == metric)]
 
-            sns.violinplot(data=df_clf_f_score, y='cv_std', x='splitter', inner='quartile', ax=ax[idx, 1])
-            ax[idx, 1].set_title('%s 5-fold CV std' % clf)
-            ax[idx, 1].set_ylabel('%s' % metric)
-            ax[idx, 1].set_ylim([0.00, 0.05])
+                    sns.boxplot(data=df_clf_f_score, y='cv_mean', x='splitter', ax=ax[idx, 0])
+                    ax[idx, 0].set_title('%s 5-fold CV mean' % clf)
+                    ax[idx, 0].set_ylabel('%s' % metric)
+                    # ax[idx, 0].set_ylim([0.925, 1.00])
 
-        fig.tight_layout()
+                    sns.boxplot(data=df_clf_f_score, y='cv_std', x='splitter', ax=ax[idx, 1])
+                    ax[idx, 1].set_title('%s 5-fold CV std' % clf)
+                    ax[idx, 1].set_ylabel('%s' % metric)
+                    # ax[idx, 1].set_ylim([0.00, 0.05])
 
-        plt.show()
+                fig.tight_layout()
+
+                path_fig = path_analysis_obj / ('%s_%s.pdf' % (dataset, metric))
+                fig.savefig(str(path_fig))
