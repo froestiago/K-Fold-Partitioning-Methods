@@ -5,6 +5,7 @@ def sort_by_label(X, y):
     sorted_index = y.argsort()
     return X[sorted_index], y[sorted_index]
 
+
 def circular_append(input_list, output_list, k):
     i = 0
     for x in input_list:
@@ -14,6 +15,7 @@ def circular_append(input_list, output_list, k):
         else:
             i = 0
     return(output_list)
+
 
 def data_slicing_by_label(X, y, indexes):
     X_out = np.split(X, indexes)

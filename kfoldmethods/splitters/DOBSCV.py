@@ -1,31 +1,23 @@
-# import numpy as np
-# from pandas.core.indexing import need_slice
-
-# from scipy.spatial.kdtree import distance_matrix
-# from sklearn.datasets import make_blobs
-# from sklearn.metrics import pairwise_distances
-# from common_func import aux_indexes, aux_indexes, sort_by_label, circular_append, data_slicing_by_label
-
 import numpy as np
-from pandas.core.indexing import need_slice
-
 from sklearn.metrics import pairwise_distances
 from sklearn.utils import indexable, check_random_state, shuffle
-from common_func import aux_indexes, sort_by_label, circular_append, data_slicing_by_label
 import copy
 
-def dobscv(X, y, k, rng=None, bad_case = False):
+from .utils import aux_indexes, sort_by_label, circular_append, data_slicing_by_label
+
+
+def dobscv(X, y, k, rng=None, bad_case=False):
     if rng is None:
         rng = np.random.RandomState()
 
-    #sort dataset by labels
+    # sort dataset by labels
     X, y = sort_by_label(X, y)
 
     slicing_index, segment_shift, start_of_segment, end_of_segment = aux_indexes(y)
 
     X, y = data_slicing_by_label(X, y, slicing_index)
 
-    index_list = [] #to be returned
+    index_list = []  # to be returned
 
     for each_class in X:
         distance_matrix = pairwise_distances(each_class, metric='euclidean')
@@ -36,11 +28,10 @@ def dobscv(X, y, k, rng=None, bad_case = False):
             k_closest = []
             chosen_instance = np.random.choice(possible_rand)
             sorted_distances = np.sort(distance_matrix[chosen_instance])
-            
+
             if bad_case == True:
                 sorted_distances = sorted_distances[::-1]
 
-            
             index_sorted_distances = np.argsort(distance_matrix[chosen_instance])
 
             if len(possible_rand) < k:
@@ -52,20 +43,21 @@ def dobscv(X, y, k, rng=None, bad_case = False):
             for zero_column_line in k_closest:
                 distance_matrix[zero_column_line, :] = np.nan
                 distance_matrix[:, zero_column_line] = np.nan
-            
+
             possible_rand = np.setdiff1d(possible_rand, k_closest)
 
             index_list.extend(k_closest)
             i -= n
 
-    #sum segment_shift on each position
+    # sum segment_shift on each position
     for i, j, x in zip(start_of_segment, end_of_segment, segment_shift):
         index_list[i:j] += x
 
-    folds = [[] for _ in range(k)] #list with kfolds (empty)
+    folds = [[] for _ in range(k)]  # list with kfolds (empty)
     folds = circular_append(index_list, folds, k)
 
     return folds
+
 
 class DOBSCVSplitter:
     def __init__(self, n_splits=5, random_state=None, shuffle=True, bad_case=False):
@@ -117,7 +109,6 @@ class DOBSCVSplitter:
             folds = dobscv(X, y, self.n_splits, rng=rng, bad_case=False)
         else:
             folds = dobscv(X, y, self.n_splits, rng=rng, bad_case=True)
-
 
         for k in range(self.n_splits):
             test_fold_index = self.n_splits - k - 1  # start by using the last fold as the test fold

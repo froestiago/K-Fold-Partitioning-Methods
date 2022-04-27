@@ -1,11 +1,9 @@
 import numpy as np
-from pandas.core.indexing import need_slice
 from sklearn.utils import indexable, check_random_state, shuffle
-from common_func import circular_append
 from sklearn.cluster import KMeans
 import copy
 
-from sklearn.datasets import load_digits
+from .utils import circular_append
 
 
 def CBDSCV(X, y, k, rng=None):
@@ -103,21 +101,3 @@ class CBDSCVSplitter:
     def get_n_splits(self, X=None, y=None, groups=None):
         return self.n_splits
 
-# def main():
-#     blob_centers = np.array(
-#     [[ 0.2,  2.3],
-#      [-1.5 ,  2.3],
-#      [-2.8,  1.8],
-#      [-2.8,  2.8],
-#      [-2.8,  1.3]])
-#     blob_std = np.array([0.4, 0.3, 0.1, 0.1, 0.1])
-
-#     # X, y = make_blobs(n_samples=50, centers=blob_centers,
-#     # cluster_std=blob_std, random_state=7)
-#     X, y = load_digits(return_X_y=True)
-
-#     CBDSCV(X, y)
-
-
-# if __name__ == '__main__':
-#     main()

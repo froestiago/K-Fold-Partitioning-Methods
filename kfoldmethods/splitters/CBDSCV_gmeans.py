@@ -1,19 +1,11 @@
-# import numpy as np
-# from pandas.core.indexing import need_slice
-
-# from scipy.spatial.kdtree import distance_matrix
-# from sklearn.datasets import make_blobs
-# from sklearn.metrics import pairwise_distances
-# from common_func import aux_indexes, aux_indexes, sort_by_label, circular_append, data_slicing_by_label
-
 import numpy as np
-from pandas.core.indexing import need_slice
-
 from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.utils import indexable, check_random_state, shuffle
 from pyclustering.cluster.gmeans import gmeans
-from common_func import aux_indexes, sort_by_label, circular_append, data_slicing_by_label
 import copy
+
+from .utils import circular_append
+
 
 def CBDSCV_gmeans(X, y, rng=None, bad_case = False):
     if rng is None:

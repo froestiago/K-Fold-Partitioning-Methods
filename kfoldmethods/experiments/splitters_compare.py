@@ -13,7 +13,6 @@ from joblib import Memory
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import KFold, StratifiedKFold, StratifiedShuffleSplit, cross_val_score, cross_validate, GridSearchCV
 from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_score, confusion_matrix
-from sklearn.datasets import load_iris, load_digits, load_breast_cancer
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
@@ -21,15 +20,20 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils import resample
 from sklearn.base import clone
 import seaborn as sns
+import pandas as pd
 
 
-def compare_variance(dir_output, run_name=None, **kwargs):
-    logger = LocalLogger(dir_output=dir_output, use_tensor_board=True)
-    path_cache = str((Path(dir_output) / Path('cachedir')).resolve())
+def compare_variance(args):
+    dir_output = args.output_dir
+    dir_output_obj = Path(dir_output)
+    random_state = args.rs
+    n_splits = args.n_splits
+    n_runs = args.n_runs
+    idx_ds_0 = args.start_from
+
+    logger = LocalLogger(dir_output=dir_output, use_tensor_board=False)
+    path_cache = str((dir_output_obj / Path('cachedir')).resolve())
     memory = Memory(path_cache)
-    random_state = 0
-    n_splits = 5
-    n_runs = 20
 
     splitter_methods = [
         DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False, random_state=0),
@@ -51,11 +55,13 @@ def compare_variance(dir_output, run_name=None, **kwargs):
         {'clf': [DecisionTreeClassifier(random_state=0)], 'clf__max_depth': [1, 5, 10, 15, 50]}
     ]
 
-    for idx_ds, ds in enumerate(datasets[75:]):
+    for idx_ds in range(idx_ds_0, len(datasets)):
+        ds = datasets[idx_ds]
+
         if ds == 'lymphography':
             continue
 
-        print("Dataset: %s  [%d/%d]" % (ds, idx_ds+75+1, len(datasets)))
+        print("Dataset: %s  [%d/%d]" % (ds, idx_ds, len(datasets)))
         X, y = fetch_data(ds, return_X_y=True, local_cache_dir=path_cache)
 
         # this will use cross validation to find the best hyperparameters for each classifier in this dataset
@@ -71,11 +77,11 @@ def compare_variance(dir_output, run_name=None, **kwargs):
             print("Results: {}".format(search.best_score_))
 
         # I use a rng_sampler so that the resampling works the same way always independently of how many ds and models
-        # we use. Besides adding reproducibility, this also improves efficiency since we cache the results.
+        # we use. Beside adding reproducibility, this also improves efficiency since we cache the results.
         rng_sampler = np.random.RandomState(random_state)
         for run in range(n_runs):
             print("Run: [%d/%d]" % (run + 1, n_runs))
-            random_state_sampler = rng_sampler.randint(0, 99999)
+            random_state_sampler = rng_sampler.randint(0, 99999999)
             resample_indices = np.arange(0, X.shape[0])
             resample_indices = resample(resample_indices, random_state=random_state_sampler)
             logger.log_json(resample_indices.tolist(), '%s/indices.json' % ds)
@@ -103,7 +109,8 @@ def compare_variance(dir_output, run_name=None, **kwargs):
                         logger.log_json(confusion_mat, '%s/confusion_matrix.json' % ns)
 
 
-def compare_variance_analysis(path_run: str):
+def compare_variance_analysis(args):
+    path_run = args.output_dir
     path_run_obj = Path(path_run)
     path_analysis_obj = path_run_obj.parent / 'analysis' / path_run_obj.stem
     if not path_analysis_obj.exists():
@@ -152,3 +159,4 @@ def compare_variance_analysis(path_run: str):
 
                 path_fig = path_analysis_obj / ('%s_%s.pdf' % (dataset, metric))
                 fig.savefig(str(path_fig))
+                plt.close(fig)
