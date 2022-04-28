@@ -1,6 +1,6 @@
 import time
 import numpy as np
-from sklearn.datasets import make_blobs, load_iris
+from sklearn.datasets import make_blobs, load_iris, load_wine
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 from sklearn.linear_model import LogisticRegression
@@ -10,7 +10,6 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
 
 from ..splitters import DOBSCV, DBSVC, CBDSCV, CBDSCV_gmeans
-
 
 def timing_test():
     np.random.seed(42)
@@ -95,23 +94,25 @@ def test_cbdscv_splitter():
 
     random_state = np.random.RandomState(0)
 
-    blob_centers = np.array(
-        [[0.2, 2.3],  # y = 0
-         [-1.5, 2.3],  # y = 1
-         [-2.8, 1.8],  # y = 2
-         [-2.8, 2.8],  # y = 3
-         [-2.8, 1.3]])  # y = 4
-    blob_std = np.array([0.4, 0.3, 0.1, 0.1, 0.1])
+    # blob_centers = np.array(
+    #     [[0.2, 2.3],  # y = 0
+    #      [-1.5, 2.3],  # y = 1
+    #      [-2.8, 1.8],  # y = 2
+    #      [-2.8, 2.8],  # y = 3
+    #      [-2.8, 1.3]])  # y = 4
+    # blob_std = np.array([0.4, 0.3, 0.1, 0.1, 0.1])
 
-    X, y = make_blobs(n_samples=500, centers=blob_centers,
-                      cluster_std=blob_std, shuffle=True, random_state=random_state)
+    # X, y = make_blobs(n_samples=500, centers=blob_centers,
+    #                   cluster_std=blob_std, shuffle=True, random_state=random_state)
+
+    X, y = load_iris(return_X_y=True)    
 
     pipeline = Pipeline([
         ('scaler', StandardScaler()),
         ('clf', LogisticRegression())
     ])
 
-    splitter_dobscv = CBDSCV.CBDSCVSplitter(random_state=random_state)
+    splitter_dobscv = CBDSCV.CBDSCVSplitter(random_state=random_state, n_splits=5)
 
     scores = cross_val_score(pipeline, X, y=y, cv=splitter_dobscv)
     print("-------------------")
@@ -204,7 +205,7 @@ def test_all():
     # X, y = fetch_data('mushroom', return_X_y=True)
     # X, y = load_wine(return_X_y=True)
     # X, y = load_iris(return_X_y=True)
-    n_splits = 10
+    n_splits = 3
 
     bad_case_splitter_dbscv = DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=True)
     splitter_dbscv = DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False)
