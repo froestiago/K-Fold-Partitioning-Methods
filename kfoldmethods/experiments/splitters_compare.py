@@ -135,6 +135,35 @@ def compare_variance_analysis(args):
         df_runs = df.groupby(by=['dataset', 'run', 'splitter', 'classifier', 'metric'], as_index=False)\
             .agg(cv_mean=('value', 'mean'), cv_std=('value', 'std'))
 
+        def apply_func(g):
+            g.loc[:, ['cv_mean', 'cv_std']] = g.loc[:, ['cv_mean', 'cv_std']] - \
+                                              g.loc[g['splitter'] == 'StKFold', ['cv_mean', 'cv_std']].to_numpy()
+            return g
+        group_by_columns = ['dataset', 'run', 'classifier', 'metric']
+        df_runs_transformed = df_runs.groupby(group_by_columns, as_index=False).apply(apply_func)
+
+        df_runs_transformed = df_runs_transformed[
+            df_runs_transformed['splitter'] != 'StKFold']
+
+        for group_name, group in df_runs_transformed.groupby(['classifier', 'metric']):
+            fig, ax = plt.subplots()
+            sns.boxplot(data=group, x='cv_std', y='splitter', ax=ax)
+
+            fig_name = "_".join(group_name)
+            fig_name = "%s_all_runs_all_ds.jpg" % fig_name
+            path_fig = path_analysis_obj / fig_name
+            fig.savefig(str(path_fig))
+            plt.close(fig)
+
+            fig, ax = plt.subplots()
+            sns.histplot(data=group, x='cv_std', hue='splitter', ax=ax)
+
+            fig_name = "_".join(group_name)
+            fig_name = "%s_all_runs_all_ds_distribution.jpg" % fig_name
+            path_fig = path_analysis_obj / fig_name
+            fig.savefig(str(path_fig))
+            plt.close(fig)
+
         for idx_ds, dataset in enumerate(df_runs['dataset'].unique()):
             df_runs_ds = df_runs.loc[df_runs['dataset'] == dataset]
 
