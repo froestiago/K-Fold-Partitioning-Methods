@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pmlb import fetch_data
 
-from ..splitters import DOBSCV, DBSVC, CBDSCV
+from ..splitters import DOBSCV, DBSVC, CBDSCV, CBDSCV_gmeans
 from .loggers import LocalLogger, local_logger_to_long_frame
 from ..datasets.pmlb_api import pmlb_get_ds_list
 
@@ -19,6 +19,7 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils import resample
 from sklearn.base import clone
+from sklearn.ensemble import RandomForestClassifier
 import seaborn as sns
 import pandas as pd
 
@@ -39,6 +40,7 @@ def compare_variance(args):
         DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False, random_state=0),
         # DOBSCV.DOBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False, random_state=0),
         CBDSCV.CBDSCVSplitter(n_splits=n_splits, shuffle=False, random_state=0),
+        CBDSCV_gmeans.CBDSCV_gmeansSplitter(shuffle=False, bad_case=False, random_state=0),
         StratifiedKFold(n_splits=n_splits),
         KFold(n_splits=n_splits),
         StratifiedShuffleSplit(n_splits=n_splits, random_state=0)
@@ -49,10 +51,15 @@ def compare_variance(args):
 
     pipeline = Pipeline([('scaler', MinMaxScaler()), ('clf', LogisticRegression())])
     pipeline_params = [
-        {'clf': [LogisticRegression(max_iter=100100, random_state=0)], 'clf__C': [0.003, 0.03, 0.3, 3.0, 30.0]},
-        {'clf': [SVC(kernel='rbf', max_iter=100100, random_state=0)], 'clf__C': [0.3, 3.0, 30.0, 300.0],
+        {'clf': [LogisticRegression(max_iter=100100, random_state=0, class_weight='balanced')], 
+        'clf__C': [0.003, 0.03, 0.3, 3.0, 30.0]},
+
+        {'clf': [SVC(kernel='rbf', max_iter=100100, random_state=0, class_weight='balanced')], 
+         'clf__C': [0.3, 3.0, 30.0, 300.0],
          'clf__gamma': [0.00003, 0.0003, 0.003, 0.03, 0.3]},
-        {'clf': [DecisionTreeClassifier(random_state=0)], 'clf__max_depth': [1, 5, 10, 15, 50]}
+         
+        {'clf': [RandomForestClassifier(random_state=0, class_weight='balanced')], 
+         'clf__max_depth': [1, 5, 10, 15, 50]}
     ]
 
     for idx_ds in range(idx_ds_0, len(datasets)):
@@ -110,7 +117,8 @@ def compare_variance(args):
 
 
 def compare_variance_analysis(args):
-    path_run = args.output_dir
+    print(args)
+    path_run = args.run_dir
     path_run_obj = Path(path_run)
     path_analysis_obj = path_run_obj.parent / 'analysis' / path_run_obj.stem
     if not path_analysis_obj.exists():
@@ -161,6 +169,8 @@ def compare_variance_analysis(args):
             fig_name = "_".join(group_name)
             fig_name = "%s_all_runs_all_ds_distribution.jpg" % fig_name
             path_fig = path_analysis_obj / fig_name
+            
+            fig.tight_layout()
             fig.savefig(str(path_fig))
             plt.close(fig)
 

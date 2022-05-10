@@ -16,11 +16,6 @@ def build_experiment_subparser(subparsers):
         help="Directory where to save results, if any. Default is %(default)s")
 
     parser_experiment.add_argument(
-        "--analysis", action="store_true", default=False,
-        help="Run only the analysis of the metadata."
-    )
-
-    parser_experiment.add_argument(
         "--rs", type=int, default=123, help="Random state (default: %(default)s).")
 
     parser_experiment.add_argument(
@@ -35,11 +30,20 @@ def build_experiment_subparser(subparsers):
     return parser_experiment
 
 
+def build_analysis_subparser(subparsers):
+    parser_analysis = subparsers.add_parser('analyze', help='Analyze results of experiments.')
+
+    parser_analysis.add_argument('-r', '--run-dir', required=True, type=str, help="Directory containing results.")
+
+    return parser_analysis
+
+
 def main():
     parser = argparse.ArgumentParser("k-Fold Partitioning Methods")
     subparsers = parser.add_subparsers(dest='subparser_name')
     parser_test = build_test_subparser(subparsers)
     parser_experiment = build_experiment_subparser(subparsers)
+    parser_analysis = build_analysis_subparser(subparsers)
     args = parser.parse_args()
 
     if args.subparser_name == "test":
@@ -47,12 +51,12 @@ def main():
         return
 
     if args.subparser_name == "run":
-        if args.analysis:
-            splitters_compare.compare_variance_analysis(args)
-            return
-
         splitters_compare.compare_variance(args)
+        return
+    
+    if args.subparser_name == "analyze":
         splitters_compare.compare_variance_analysis(args)
+        return
 
 
 if __name__ == '__main__':
