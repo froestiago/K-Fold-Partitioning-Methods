@@ -3,6 +3,7 @@
 output/
 cachedir/
 run_data
+error*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

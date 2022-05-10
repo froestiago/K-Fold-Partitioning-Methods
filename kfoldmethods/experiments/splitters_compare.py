@@ -1,4 +1,6 @@
+from datetime import datetime
 from pathlib import Path
+import traceback as tb
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -65,56 +67,63 @@ def compare_variance(args):
     for idx_ds in range(idx_ds_0, len(datasets)):
         ds = datasets[idx_ds]
 
-        if ds == 'lymphography':
-            continue
+        try:
+            if ds == 'lymphography':
+                continue
 
-        print("Dataset: %s  [%d/%d]" % (ds, idx_ds, len(datasets)))
-        X, y = fetch_data(ds, return_X_y=True, local_cache_dir=path_cache)
+            print("Dataset: %s  [%d/%d]" % (ds, idx_ds, len(datasets)))
+            X, y = fetch_data(ds, return_X_y=True, local_cache_dir=path_cache)
 
-        # this will use cross validation to find the best hyperparameters for each classifier in this dataset
-        # it will append to classifiers a estimator with unfitted parameters, but with the best hyperparameters
-        classifiers = []
-        for params in pipeline_params:
-            print("Looking for best hyperparameters of %s ..." % params['clf'][0].__class__)
-            search = GridSearchCV(pipeline, params, refit=True, cv=5)
-            search.fit(X, y)
-            estim = clone(search.best_estimator_)  # 'clone' will copy the unfitted best estimator.
-            classifiers.append(estim)
-            print("Found: {}".format(estim.get_params()))
-            print("Results: {}".format(search.best_score_))
+            # this will use cross validation to find the best hyperparameters for each classifier in this dataset
+            # it will append to classifiers a estimator with unfitted parameters, but with the best hyperparameters
+            classifiers = []
+            for params in pipeline_params:
+                print("Looking for best hyperparameters of %s ..." % params['clf'][0].__class__)
+                search = GridSearchCV(pipeline, params, refit=True, cv=5)
+                search.fit(X, y)
+                estim = clone(search.best_estimator_)  # 'clone' will copy the unfitted best estimator.
+                classifiers.append(estim)
+                print("Found: {}".format(estim.get_params()))
+                print("Results: {}".format(search.best_score_))
 
-        # I use a rng_sampler so that the resampling works the same way always independently of how many ds and models
-        # we use. Beside adding reproducibility, this also improves efficiency since we cache the results.
-        rng_sampler = np.random.RandomState(random_state)
-        for run in range(n_runs):
-            print("Run: [%d/%d]" % (run + 1, n_runs))
-            random_state_sampler = rng_sampler.randint(0, 99999999)
-            resample_indices = np.arange(0, X.shape[0])
-            resample_indices = resample(resample_indices, random_state=random_state_sampler)
-            logger.log_json(resample_indices.tolist(), '%s/indices.json' % ds)
+            # I use a rng_sampler so that the resampling works the same way always independently of how many ds and models
+            # we use. Beside adding reproducibility, this also improves efficiency since we cache the results.
+            rng_sampler = np.random.RandomState(random_state)
+            for run in range(n_runs):
+                print("Run: [%d/%d]" % (run + 1, n_runs))
+                random_state_sampler = rng_sampler.randint(0, 99999999)
+                resample_indices = np.arange(0, X.shape[0])
+                resample_indices = resample(resample_indices, random_state=random_state_sampler)
+                logger.log_json(resample_indices.tolist(), '%s/indices.json' % ds)
 
-            X_r = X[resample_indices]
-            y_r = y[resample_indices]
-            for splitter in splitter_methods:
-                for train, test in splitter.split(X_r, y_r):
-                    for model in classifiers:
-                        model = model.fit(X_r[train], y_r[train])
-                        y_pred = model.predict(X_r[test])
+                X_r = X[resample_indices]
+                y_r = y[resample_indices]
+                for splitter in splitter_methods:
+                    for train, test in splitter.split(X_r, y_r):
+                        for model in classifiers:
+                            model = model.fit(X_r[train], y_r[train])
+                            y_pred = model.predict(X_r[test])
 
-                        accuracy = accuracy_score(y_r[test], y_pred)
-                        precision = precision_score(y_r[test], y_pred, average='macro')
-                        recall = recall_score(y_r[test], y_pred, average='macro')
-                        f1 = f1_score(y_r[test], y_pred, average='macro')
-                        confusion_mat = confusion_matrix(y_r[test], y_pred).tolist()
+                            accuracy = accuracy_score(y_r[test], y_pred)
+                            precision = precision_score(y_r[test], y_pred, average='macro')
+                            recall = recall_score(y_r[test], y_pred, average='macro')
+                            f1 = f1_score(y_r[test], y_pred, average='macro')
+                            confusion_mat = confusion_matrix(y_r[test], y_pred).tolist()
 
-                        ns = '%s/%d/%s/%s' % (ds, run, splitter.__class__.__name__,
-                                              model['clf'].__class__.__name__)
-                        logger.log_metric(accuracy, '%s/accuracy' % ns)
-                        logger.log_metric(precision, '%s/precision' % ns)
-                        logger.log_metric(recall, '%s/recall' % ns)
-                        logger.log_metric(f1, '%s/f1' % ns)
-                        logger.log_json(confusion_mat, '%s/confusion_matrix.json' % ns)
-
+                            ns = '%s/%d/%s/%s' % (ds, run, splitter.__class__.__name__,
+                                                model['clf'].__class__.__name__)
+                            logger.log_metric(accuracy, '%s/accuracy' % ns)
+                            logger.log_metric(precision, '%s/precision' % ns)
+                            logger.log_metric(recall, '%s/recall' % ns)
+                            logger.log_metric(f1, '%s/f1' % ns)
+                            logger.log_json(confusion_mat, '%s/confusion_matrix.json' % ns)
+        except Exception as e:
+            path_log_error = "error_%s" % datetime.now().isoformat()
+            print("Something occurred during processing of %s. Logging to: %s" % (ds, path_log_error))
+            e_str = ''.join(tb.format_exception(None, e, e.__traceback__))
+            with open(path_log_error, 'w') as f:
+                f.write(e_str)
+            
 
 def compare_variance_analysis(args):
     print(args)
