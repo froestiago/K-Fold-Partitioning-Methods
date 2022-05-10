@@ -9,8 +9,11 @@ from .utils import circular_append
 def CBDSCV(X, y, k, rng=None):
     if rng is None:
         rng = np.random.RandomState()
-
-    k_clusters = len(np.unique(y))  # extrating k, the k that will be used on clustering, from y
+    
+    if k == None:
+        k_clusters = len(np.unique(y))  # extrating k, the k that will be used on clustering, from y
+    else:
+        k_clusters = k
 
     kmeans = KMeans(n_clusters=k_clusters)
     X_new = kmeans.fit_transform(X)  # does not allow to choose the metric for distance
@@ -33,14 +36,14 @@ def CBDSCV(X, y, k, rng=None):
         each_cluster = np.sort(each_cluster, order='distance')
         index_list.extend(each_cluster['index'])
 
-    folds = [[] for _ in range(k)]
-    folds = circular_append(index_list, folds, k)
+    folds = [[] for _ in range(k_clusters)]
+    folds = circular_append(index_list, folds, k_clusters)
 
-    return folds
+    return folds, k_clusters
 
 
 class CBDSCVSplitter:
-    def __init__(self, n_splits=5, random_state=None, shuffle=True):
+    def __init__(self, n_splits=None, random_state=None, shuffle=True):
         """Split dataset indices according to the CBDSCV technique.
 
         Parameters
@@ -84,8 +87,8 @@ class CBDSCVSplitter:
         if self.shuffle:
             X, y = shuffle(X, y, random_state=rng)
 
-        folds = CBDSCV(X, y, self.n_splits, rng=rng)
-
+        folds, self.n_splits = CBDSCV(X, y, self.n_splits, rng=rng)
+        
         for k in range(self.n_splits):
             test_fold_index = self.n_splits - k - 1  # start by using the last fold as the test fold
             ind_train = []
