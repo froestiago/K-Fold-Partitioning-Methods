@@ -7,8 +7,6 @@ from .utils import aux_indexes, sort_by_label, circular_append, data_slicing_by_
 
 
 def dbsvc(X, y, k, bad_case = False, rng=None):
-    print(X.shape)
-    print(y.shape)
     if rng is None:
         rng = np.random.RandomState()
 
@@ -22,12 +20,12 @@ def dbsvc(X, y, k, bad_case = False, rng=None):
     i = 0
     index_list = [] #to be returned
 
-    print(slicing_index)
     for each_class in X:
         distance_matrix = pairwise_distances(each_class, metric='euclidean')
+        np.fill_diagonal(distance_matrix, val=-1)
+
         # smallest_distance_index = 1 #to test
         smallest_distance_index = (rng.randint(len(distance_matrix[0])))
-        print("smallest_distance_index: {}".format(smallest_distance_index))
         index_list.append(smallest_distance_index)
         i = 0
         while i < len(distance_matrix[0])-1:  # while i < n_instances_in_class - 1
@@ -35,30 +33,23 @@ def dbsvc(X, y, k, bad_case = False, rng=None):
             if bad_case == False:
                 # get index of instance with smallest distance from previous instance
                 # masked_where masks (omits) elements where first argument is true
-                smallest_distance_index = np.argmin(np.ma.masked_where(distance_matrix[smallest_distance_index] == 0, distance_matrix[smallest_distance_index]))
+                smallest_distance_index = np.argmin(
+                    np.ma.masked_where(distance_matrix[smallest_distance_index] < 0, distance_matrix[smallest_distance_index]))
             else:
-                smallest_distance_index = np.argmax(np.ma.masked_where(distance_matrix[smallest_distance_index] == 0, distance_matrix[smallest_distance_index]))
-            # print("zero_index ", zero_index)
-            # print("smallest_distance_index ", smallest_distance_index)
-            
-            distance_matrix[zero_index, :] = 0
-            distance_matrix[:, zero_index] = 0
+                smallest_distance_index = np.argmax(
+                    np.ma.masked_where(distance_matrix[smallest_distance_index] < 0, distance_matrix[smallest_distance_index]))
+                
+            distance_matrix[zero_index, :] = -1
+            distance_matrix[:, zero_index] = -1
             index_list.append(smallest_distance_index)
             i += 1
 
-            zero_values = np.sum(1*(distance_matrix[smallest_distance_index] == 0))
-            print("zero_values ", zero_values)
-        print(index_list)
-
     #sum segment_shift on each position
-    print(start_of_segment, end_of_segment, segment_shift)
     for i, j, x in zip(start_of_segment, end_of_segment, segment_shift):
         index_list[i:j] += x
-    print(index_list)
 
     folds = [[] for _ in range(k)] #list with kfolds (empty)
     folds = circular_append(index_list, folds, k)
-    # print(folds)
     return(folds) #return indexes
 
 
