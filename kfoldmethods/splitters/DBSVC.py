@@ -20,7 +20,7 @@ def dbsvc(X, y, k, bad_case = False, rng=None):
     i = 0
     index_list = [] #to be returned
 
-    for each_class in X:
+    for j, each_class in enumerate(X):
         distance_matrix = pairwise_distances(each_class, metric='euclidean')
         np.fill_diagonal(distance_matrix, val=-1)
 

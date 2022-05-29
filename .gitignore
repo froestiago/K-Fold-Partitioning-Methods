@@ -5,6 +5,7 @@ cachedir/
 run_data
 error*
 .metaflow
+cache
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
