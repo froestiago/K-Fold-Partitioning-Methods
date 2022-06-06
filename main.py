@@ -1,5 +1,5 @@
 import argparse
-from kfoldmethods.experiments import splitters_compare
+from kfoldmethods.experiments import splitters_compare, tune_classifiers
 from kfoldmethods.tests import test_splitters
 
 
@@ -38,12 +38,20 @@ def build_analysis_subparser(subparsers):
     return parser_analysis
 
 
+def build_hyperparameters_search_subparsers(subparsers):
+    parser_hp_search = subparsers.add_parser('hp-search', help='Analyze results of experiments.')
+
+    return parser_hp_search
+
+
 def main():
     parser = argparse.ArgumentParser("k-Fold Partitioning Methods")
     subparsers = parser.add_subparsers(dest='subparser_name')
     parser_test = build_test_subparser(subparsers)
     parser_experiment = build_experiment_subparser(subparsers)
     parser_analysis = build_analysis_subparser(subparsers)
+    parser_hp = build_hyperparameters_search_subparsers(subparsers)
+
     args = parser.parse_args()
 
     if args.subparser_name == "test":
@@ -58,6 +66,10 @@ def main():
         splitters_compare.compare_variance_analysis(args)
         return
 
+    if args.subparser_name == "hp-search":
+        tune_classifiers.tune(args)
+        return
 
+    
 if __name__ == '__main__':
     main()
