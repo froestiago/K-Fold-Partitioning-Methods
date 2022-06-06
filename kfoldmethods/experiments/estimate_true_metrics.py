@@ -120,8 +120,13 @@ def analyze(args):
     results = joblib.load(str(latest / 'results.joblib'))
     metrics_df = results.select_metric_results()
     metrics_df = pd.DataFrame(metrics_df)
+    print(metrics_df)
 
 
 def main(args):
+    if args.analyze:
+        analyze(args)
+        return
+    
     experiment = TrueMetricsEstimate()
     experiment.estimate_true_metrics()

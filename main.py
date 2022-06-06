@@ -45,6 +45,7 @@ def build_hyperparameters_search_subparsers(subparsers):
 
 def build_estimate_true_metrics_subparsers(subparsers):
     parser_true_estimate = subparsers.add_parser('true-estimate', help='Estimate true metrics for each dataset and classifier.')
+    parser_true_estimate.add_argument("-a", "--analyze", action="store_true", help="Analyze results of run")
     return parser_true_estimate
 
 
