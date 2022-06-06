@@ -7,7 +7,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 from kfoldmethods.datasets.pmlb_api import pmlb_get_ds_list
 
-
+run_data_dir = 'run_data'
 pipeline = Pipeline([('scaler', MinMaxScaler()), ('clf', LogisticRegression())])
 pipeline_params = [
     {'clf': [LogisticRegression(max_iter=100100, random_state=0, class_weight='balanced')], 
@@ -26,7 +26,11 @@ pipeline_params = [
 
 tuning_folds = 10
 tuning_grid_seach_n_jobs = 4
-classifier_hyperparameters_output = "run_data/classifier_hyperparameters"
+classifier_hyperparameters_output = "%s/classifier_hyperparameters" % run_data_dir
 
-datasets = pmlb_get_ds_list(task='classification', n_samples=(200, 2000))
+datasets = pmlb_get_ds_list(task='classification', n_samples=(200, 2000), verbose=False)
 datasets = datasets[::3]
+
+true_estimates_n_splits = 100
+true_estimates_n_jobs = 2
+true_estimates_random_state = 123

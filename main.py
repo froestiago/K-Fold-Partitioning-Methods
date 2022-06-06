@@ -1,5 +1,5 @@
 import argparse
-from kfoldmethods.experiments import splitters_compare, tune_classifiers
+from kfoldmethods.experiments import splitters_compare, tune_classifiers, estimate_true_metrics
 from kfoldmethods.tests import test_splitters
 
 
@@ -40,8 +40,12 @@ def build_analysis_subparser(subparsers):
 
 def build_hyperparameters_search_subparsers(subparsers):
     parser_hp_search = subparsers.add_parser('hp-search', help='Analyze results of experiments.')
-
     return parser_hp_search
+
+
+def build_estimate_true_metrics_subparsers(subparsers):
+    parser_true_estimate = subparsers.add_parser('true-estimate', help='Estimate true metrics for each dataset and classifier.')
+    return parser_true_estimate
 
 
 def main():
@@ -51,6 +55,7 @@ def main():
     parser_experiment = build_experiment_subparser(subparsers)
     parser_analysis = build_analysis_subparser(subparsers)
     parser_hp = build_hyperparameters_search_subparsers(subparsers)
+    parser_true_estimate = build_estimate_true_metrics_subparsers(subparsers)
 
     args = parser.parse_args()
 
@@ -70,6 +75,10 @@ def main():
         tune_classifiers.tune(args)
         return
 
+    if args.subparser_name == "true-estimate":
+        estimate_true_metrics.main(args)
+        return
     
+
 if __name__ == '__main__':
     main()
