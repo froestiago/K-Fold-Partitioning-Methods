@@ -31,6 +31,6 @@ classifier_hyperparameters_output = "%s/classifier_hyperparameters" % run_data_d
 datasets = pmlb_get_ds_list(task='classification', n_samples=(200, 2000), verbose=False)
 datasets = datasets[::3]
 
-true_estimates_n_splits = 5
+true_estimates_n_splits = 100
 true_estimates_n_jobs = 2
 true_estimates_random_state = 123
