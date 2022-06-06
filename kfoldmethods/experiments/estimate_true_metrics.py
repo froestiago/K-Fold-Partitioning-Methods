@@ -17,10 +17,11 @@ class TrueMetricsEstimateResults:
         self.records_classifiers = []
         self.records_metrics = []
 
-    def insert_dataset_split(self, ds_name, split_id, train, test):
+    def insert_dataset_split(self, ds_name, split_id, clf_name, train, test):
         self.records_splits.append({
             'ds_name': ds_name,
             'split_id': split_id,
+            'clf_name': clf_name,
             'train': train,
             'test': test,
         })
@@ -86,7 +87,7 @@ class TrueMetricsEstimate:
                 ('f1', f1), ('confusion_mat', confusion_mat)
             ]
 
-            self.results.insert_dataset_split(ds_name, split_id, train, test)
+            self.results.insert_dataset_split(ds_name, split_id, clf_class_name, train, test)
             self.results.insert_classifier(ds_name, split_id, clf_class_name, clf)
             self.results.insert_metric_results(ds_name, split_id, clf_class_name, metric_results)
             
