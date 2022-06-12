@@ -53,13 +53,15 @@ class TrueMetricsEstimateResults:
 
 
 class TrueMetricsEstimate:
-    def __init__(self, output_dir='run_data'):
+    def __init__(self, output_dir='run_data', ds_idx_0=None, ds_idx_last=None):
         self.results = TrueMetricsEstimateResults()
+        self.ds_idx_0 = ds_idx_0 if ds_idx_0 is not None else 0
+        self.ds_idx_last = ds_idx_last if ds_idx_last is not None else len(configs.datasets)-1
 
         self.path_results = Path(output_dir) / \
             Path('true_estimate') / \
             datetime.now().isoformat(timespec='seconds') / \
-            'results.joblib'
+            'results_{}_to_{}.joblib'.format(self.ds_idx_0, self.ds_idx_last)
         self.path_results.parent.mkdir(exist_ok=True, parents=True)
 
     def compute_clf_estimates(self, ds_name, clf_class_name):
@@ -94,12 +96,13 @@ class TrueMetricsEstimate:
             joblib.dump(self.results, self.path_results)
 
     def estimate_true_metrics(self):
-        for ds_name in configs.datasets:
-            for params in configs.pipeline_params:
-                clf_class_name = params['clf'][0].__class__.__name__
-                print("Estimating metrics for {} with {}.".format(ds_name, clf_class_name))
+        for ds_idx, ds_name in enumerate(configs.datasets):
+            if self.ds_idx_0 <= ds_idx <= self.ds_idx_last:
+                for params in configs.pipeline_params:
+                    clf_class_name = params['clf'][0].__class__.__name__
+                    print("Estimating metrics for {} with {}.".format(ds_name, clf_class_name))
 
-                self.compute_clf_estimates(ds_name, clf_class_name)
+                    self.compute_clf_estimates(ds_name, clf_class_name)
 
 
 def analyze(args):
@@ -117,9 +120,12 @@ def analyze(args):
             latest = dir
             latest_date = run_date
     
-    results = joblib.load(str(latest / 'results.joblib'))
+    # results = joblib.load(str(latest / 'results_cp.joblib'))
+    results = joblib.load(
+        Path("run_data/true_estimate/2022-06-11T22:21:24/results_4_to_7.joblib"))
     metrics_df = results.select_metric_results()
     metrics_df = pd.DataFrame(metrics_df)
+    metrics_df.to_csv("metrics_df.csv")
     print(metrics_df)
 
 
@@ -127,6 +133,6 @@ def main(args):
     if args.analyze:
         analyze(args)
         return
-    
-    experiment = TrueMetricsEstimate()
+    ds_first, ds_last = args.ds_range
+    experiment = TrueMetricsEstimate(ds_idx_0=ds_first, ds_idx_last=ds_last)
     experiment.estimate_true_metrics()
