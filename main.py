@@ -46,8 +46,13 @@ def build_hyperparameters_search_subparsers(subparsers):
 def build_estimate_true_metrics_subparsers(subparsers):
     parser_true_estimate = subparsers.add_parser('true-estimate', help='Estimate true metrics for each dataset and classifier.')
     parser_true_estimate.add_argument("-a", "--analyze", action="store_true", help="Analyze results of run")
+
+    # TODO: ds_range is deprecated. Remove it
     parser_true_estimate.add_argument(
         "--ds-range", type=int, nargs=2, default=(0, None), help="Which datasets to process, starting from ds 0")
+    parser_true_estimate.add_argument(
+        "--select-metric-results", action="store_true", 
+        help="Generate csv files containing only the metrics from the joblib files.")
     return parser_true_estimate
 
 

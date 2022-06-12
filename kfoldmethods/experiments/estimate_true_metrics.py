@@ -8,6 +8,9 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from joblib import Parallel, delayed
 from kfoldmethods.experiments import configs
 from kfoldmethods.experiments.utils import load_best_classifier_for_dataset
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
 
 class TrueMetricsEstimateResults:
@@ -110,8 +113,7 @@ class TrueMetricsEstimate:
                     self.compute_clf_estimates(ds_name, clf_class_name)
 
 
-def analyze(args):
-    #TODO: refactor
+def select_metric_results():
     path_true_estimates = Path('run_data/true_estimate')
 
     latest = None
@@ -126,13 +128,114 @@ def analyze(args):
             latest = dir
             latest_date = run_date
     
-    # results = joblib.load(str(latest / 'results_cp.joblib'))
-    results = joblib.load(
-        Path("run_data/true_estimate/2022-06-11T23:34:47/results_0_to_3.joblib"))
-    metrics_df = results.select_metric_results()
-    metrics_df = pd.DataFrame(metrics_df)
-    metrics_df.to_csv("metrics_df.csv")
-    print(metrics_df)
+    path_true_estimate_metrics = Path('true_estimate_metrics')
+    path_true_estimate_metrics.mkdir(exist_ok=True, parents=True)
+    for i in range(27):
+        print("DS INDEX: [%d/%d]" % (i, 26))
+        results = joblib.load(
+            Path("run_data/true_estimate/2022-06-12T03:15:59/results_{}_to_{}.joblib".format(i, i)))
+        metrics_df = results.select_metric_results()
+        metrics_df = pd.DataFrame(metrics_df)
+
+        path_true_estimate_run = path_true_estimate_metrics / "true_estimate_{}.csv".format(i)
+        metrics_df.to_csv(str(path_true_estimate_run))
+
+
+def plot_distributions_for_datasets(path_true_estimates_csv: str):
+    # generate ds x clf figures distributions of the results. Each figure is 1xn_metrics
+    # This is to give a visual idea of the true estimates accuracy
+    path_true_estimate_distributions = Path("true_estimate_distributions")
+    path_true_estimate_distributions.mkdir(exist_ok=True, parents=True)
+
+    df_run = pd.read_csv(path_true_estimates_csv)
+
+    groups = df_run.groupby(by=['ds_name'])
+    for ds_name, df_group in groups:
+        df_group = df_group[df_group['metric_name'] != 'confusion_mat']
+        df_group.loc[:, 'metric_result'] = pd.to_numeric(df_group.loc[:, 'metric_result'])
+
+        n_classifiers = len(df_group['classifier_name'].unique())
+        n_metrics = len(df_group['metric_name'].unique())
+
+        sns.set_theme()
+        fig, ax = plt.subplots(n_metrics, n_classifiers, figsize=(8.3, 11.7))
+        fig.suptitle(ds_name)
+        for i, metric_name in enumerate(df_group['metric_name'].unique()):
+            for j, classifier_name in enumerate(df_group['classifier_name'].unique()):
+                df_plot = df_group[(df_group['metric_name'] == metric_name) & \
+                                   (df_group['classifier_name'] == classifier_name)]
+
+                sns.histplot(data=df_plot, x='metric_result', ax=ax[i, j])
+                ax[i, j].set_title(classifier_name.replace("Classifier", ""))
+                ax[i, j].set_xlabel(metric_name)
+        
+        fig.tight_layout()
+        path_fig = str(path_true_estimate_distributions / "{}_distribution.pdf".format(ds_name))
+        fig.savefig(path_fig)
+        plt.close(fig)
+
+
+def table_results(path_true_estimate_metrics):
+    path_true_estimate_tables = Path("true_estimate_tables")
+    path_true_estimate_tables.mkdir(exist_ok=True, parents=True)
+
+    # Summary of mean performance
+    for metric_name in ['accuracy', 'f1', 'precision', 'recall']:
+        df_summary = pd.DataFrame()
+
+        for i in range(27):
+            path_csv = str(path_true_estimate_metrics / "true_estimate_{}.csv".format(i))
+            df_run = pd.read_csv(path_csv)
+            # df_run = df_run[df_run['metric_name'] != 'confusion_mat']
+            df_run = df_run[df_run['metric_name'] == metric_name]
+
+            df_run.loc[:, 'metric_result'] = pd.to_numeric(df_run.loc[:, 'metric_result'])
+            
+            for ds_name in df_run['ds_name'].unique():
+                groups = df_run[df_run['ds_name'] == ds_name].groupby(by=['metric_name', 'classifier_name'])
+                results = groups.agg(mean=('metric_result', np.mean)).transpose().rename(index={'mean': ds_name})
+                df_summary = pd.concat((df_summary, results), axis=0)
+            
+        df_summary.rename(
+            columns={'RandomForestClassifier': 'RandomForest', 'DecisionTreeClassifier': 'DecisionTree'}, 
+                    inplace=True)
+        df_summary.to_csv(
+            str(path_true_estimate_tables / "{}_mean.csv".format(metric_name)), float_format='%.4f')
+
+    # Summary of std of performance
+    for metric_name in ['accuracy', 'f1', 'precision', 'recall']:
+        df_summary = pd.DataFrame()
+
+        for i in range(27):
+            path_csv = str(path_true_estimate_metrics / "true_estimate_{}.csv".format(i))
+            df_run = pd.read_csv(path_csv)
+            # df_run = df_run[df_run['metric_name'] != 'confusion_mat']
+            df_run = df_run[df_run['metric_name'] == metric_name]
+
+            df_run.loc[:, 'metric_result'] = pd.to_numeric(df_run.loc[:, 'metric_result'])
+            
+            for ds_name in df_run['ds_name'].unique():
+                groups = df_run[df_run['ds_name'] == ds_name].groupby(by=['metric_name', 'classifier_name'])
+                results = groups.agg(std=('metric_result', np.std)).transpose().rename(index={'std': ds_name})
+                df_summary = pd.concat((df_summary, results), axis=0)
+            
+        df_summary.rename(
+            columns={'RandomForestClassifier': 'RandomForest', 'DecisionTreeClassifier': 'DecisionTree'}, 
+                    inplace=True)
+        df_summary.to_csv(
+            str(path_true_estimate_tables / "{}_std.csv".format(metric_name)), float_format='%.4f')
+        
+
+def analyze(args):
+    plot_distributions = False
+    path_true_estimate_metrics = Path("true_estimate_metrics")
+
+    if plot_distributions:
+        for i in range(27):
+            path_csv = str(path_true_estimate_metrics / "true_estimate_{}.csv".format(i))
+            plot_distributions_for_datasets(path_csv)
+    
+    table_results(path_true_estimate_metrics)
 
 
 def run_true_metrics_estimate(output_dir, ds_idx_0, ds_idx_last):
@@ -147,11 +250,14 @@ def main(args):
     if args.analyze:
         analyze(args)
         return
-    ds_first, ds_last = args.ds_range
 
+    if args.select_metric_results:
+        select_metric_results()
+        return
+    
     output_dir = Path('run_data/true_estimate') / datetime.now().isoformat(timespec='seconds')
     n_datasets = len(configs.datasets)
-    step = 4
+    step = 1
     
     Parallel(n_jobs=configs.true_estimates_n_jobs)(
         delayed(run_true_metrics_estimate)(output_dir, i, min(i+step-1, n_datasets-1)) for i in range(0, n_datasets, step)
