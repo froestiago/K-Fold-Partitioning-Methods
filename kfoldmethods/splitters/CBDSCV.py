@@ -6,14 +6,16 @@ import copy
 from .utils import circular_append
 
 
-def CBDSCV(X, y, k, rng=None):
+def CBDSCV(X, y, k_splits, k_clusters, rng=None):
     if rng is None:
         rng = np.random.RandomState()
     
-    if k == None:
-        k_clusters = len(np.unique(y))  # extrating k, the k that will be used on clustering, from y
-    else:
-        k_clusters = k
+    if k_splits == None and k_clusters == None:
+        k_splits = len(np.unique(y))  # extrating k, the k that will be used on clustering, from y
+        k_clusters = k_splits
+
+    if k_clusters == None:
+        k_clusters = k_splits
 
     kmeans = KMeans(n_clusters=k_clusters)
     X_new = kmeans.fit_transform(X)  # does not allow to choose the metric for distance
@@ -21,7 +23,7 @@ def CBDSCV(X, y, k, rng=None):
     cluster_index = np.argsort(X_new)
     cluster_index = [i[0] for i in cluster_index]
 
-    clusters = [[] for _ in range(k_clusters)]  # list with k clusters (empty)
+    clusters = [[] for _ in range(k_splits)]  # list with k clusters (empty)
     i, size = 0, len(X_new)
 
     while i < size:
@@ -36,14 +38,14 @@ def CBDSCV(X, y, k, rng=None):
         each_cluster = np.sort(each_cluster, order='distance')
         index_list.extend(each_cluster['index'])
 
-    folds = [[] for _ in range(k_clusters)]
-    folds = circular_append(index_list, folds, k_clusters)
+    folds = [[] for _ in range(k_splits)]
+    folds = circular_append(index_list, folds, k_splits)
 
-    return folds, k_clusters
+    return folds, k_splits, k_clusters
 
 
 class CBDSCVSplitter:
-    def __init__(self, n_splits=None, random_state=None, shuffle=True):
+    def __init__(self, n_splits=None, n_clusters = None, random_state=None, shuffle=True):
         """Split dataset indices according to the CBDSCV technique.
 
         Parameters
@@ -58,6 +60,7 @@ class CBDSCVSplitter:
         # in sklearn, generally, we do not check the arguments in the initialization function.
         # There is a reason for this.
         self.n_splits = n_splits
+        self.n_clusters = n_clusters
         self.random_state = random_state  # used for enabling the user to reproduce the results
         self.shuffle = shuffle
 
@@ -87,7 +90,7 @@ class CBDSCVSplitter:
         if self.shuffle:
             X, y = shuffle(X, y, random_state=rng)
 
-        folds, self.n_splits = CBDSCV(X, y, self.n_splits, rng=rng)
+        folds, self.n_splits, self.n_clusters = CBDSCV(X, y,self.n_splits, self.n_clusters, rng=rng)
         
         for k in range(self.n_splits):
             test_fold_index = self.n_splits - k - 1  # start by using the last fold as the test fold
