@@ -1,12 +1,12 @@
 import numpy as np
 from sklearn.utils import indexable, check_random_state, shuffle
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, MiniBatchKMeans
 import copy
 
 from .utils import circular_append
 
 
-def CBDSCV(X, y, k_splits, k_clusters, rng=None):
+def CBDSCV(X, y, k_splits, k_clusters, rng=None, minibatch_kmeans=False):
     if rng is None:
         rng = np.random.RandomState()
     
@@ -17,7 +17,10 @@ def CBDSCV(X, y, k_splits, k_clusters, rng=None):
     if k_clusters == None:
         k_clusters = k_splits
 
-    kmeans = KMeans(n_clusters=k_clusters)
+    if minibatch_kmeans:
+        kmeans = MiniBatchKMeans(n_clusters=k_clusters)
+    else:
+        kmeans = KMeans(n_clusters=k_clusters)
     X_new = kmeans.fit_transform(X)  # does not allow to choose the metric for distance
 
     cluster_index = np.argsort(X_new)
