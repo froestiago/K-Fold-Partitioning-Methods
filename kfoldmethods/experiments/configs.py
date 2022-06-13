@@ -34,3 +34,7 @@ datasets = datasets[::3]
 true_estimates_n_splits = 100
 true_estimates_n_jobs = 5
 true_estimates_random_state = 123
+
+estimate_n_clusters_n_iters = 50
+estimate_n_clusters_random_state = 123
+estimate_n_clusters_n_jobs = 5

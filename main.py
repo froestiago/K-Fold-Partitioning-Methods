@@ -1,5 +1,6 @@
 import argparse
-from kfoldmethods.experiments import splitters_compare, tune_classifiers, estimate_true_metrics
+from kfoldmethods.experiments import splitters_compare, tune_classifiers, \
+    estimate_true_metrics, estimate_n_clusters
 from kfoldmethods.tests import test_splitters
 
 
@@ -56,6 +57,12 @@ def build_estimate_true_metrics_subparsers(subparsers):
     return parser_true_estimate
 
 
+def build_estimate_n_clusters_subparsers(subparsers):
+    parser_n_clusters_estimate = subparsers.add_parser('n-clusters-estimate', help='Estimate number of clusters in each dataset.')
+    parser_n_clusters_estimate.add_argument("-a", "--analyze", action="store_true", help="Analyze results of run")
+    return parser_n_clusters_estimate
+
+
 def main():
     parser = argparse.ArgumentParser("k-Fold Partitioning Methods")
     subparsers = parser.add_subparsers(dest='subparser_name')
@@ -64,6 +71,7 @@ def main():
     parser_analysis = build_analysis_subparser(subparsers)
     parser_hp = build_hyperparameters_search_subparsers(subparsers)
     parser_true_estimate = build_estimate_true_metrics_subparsers(subparsers)
+    parser_n_clusters_estimate = build_estimate_n_clusters_subparsers(subparsers)
 
     args = parser.parse_args()
 
@@ -85,6 +93,10 @@ def main():
 
     if args.subparser_name == "true-estimate":
         estimate_true_metrics.main(args)
+        return
+
+    if args.subparser_name == "n-clusters-estimate":
+        estimate_n_clusters.main(args)
         return
     
 
