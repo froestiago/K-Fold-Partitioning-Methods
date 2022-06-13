@@ -4,6 +4,9 @@ output/
 cachedir/
 run_data
 error*
+.metaflow
+cache
+true_estimate_metrics/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

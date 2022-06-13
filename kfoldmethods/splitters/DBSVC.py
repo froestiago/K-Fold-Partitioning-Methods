@@ -20,20 +20,27 @@ def dbsvc(X, y, k, bad_case = False, rng=None):
     i = 0
     index_list = [] #to be returned
 
-    for each_class in X:
+    for j, each_class in enumerate(X):
         distance_matrix = pairwise_distances(each_class, metric='euclidean')
+        np.fill_diagonal(distance_matrix, val=-1)
+
         # smallest_distance_index = 1 #to test
         smallest_distance_index = (rng.randint(len(distance_matrix[0])))
         index_list.append(smallest_distance_index)
         i = 0
-        while i < len(distance_matrix[0])-1:
+        while i < len(distance_matrix[0])-1:  # while i < n_instances_in_class - 1
             zero_index = smallest_distance_index
             if bad_case == False:
-                smallest_distance_index = np.argmin(np.ma.masked_where(distance_matrix[smallest_distance_index] == 0, distance_matrix[smallest_distance_index]))
+                # get index of instance with smallest distance from previous instance
+                # masked_where masks (omits) elements where first argument is true
+                smallest_distance_index = np.argmin(
+                    np.ma.masked_where(distance_matrix[smallest_distance_index] < 0, distance_matrix[smallest_distance_index]))
             else:
-                smallest_distance_index = np.argmax(np.ma.masked_where(distance_matrix[smallest_distance_index] == 0, distance_matrix[smallest_distance_index]))
-            distance_matrix[zero_index, :] = 0
-            distance_matrix[:, zero_index] = 0
+                smallest_distance_index = np.argmax(
+                    np.ma.masked_where(distance_matrix[smallest_distance_index] < 0, distance_matrix[smallest_distance_index]))
+                
+            distance_matrix[zero_index, :] = -1
+            distance_matrix[:, zero_index] = -1
             index_list.append(smallest_distance_index)
             i += 1
 
@@ -43,7 +50,6 @@ def dbsvc(X, y, k, bad_case = False, rng=None):
 
     folds = [[] for _ in range(k)] #list with kfolds (empty)
     folds = circular_append(index_list, folds, k)
-    # print(folds)
     return(folds) #return indexes
 
 

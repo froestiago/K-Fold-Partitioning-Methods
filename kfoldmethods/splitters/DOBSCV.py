@@ -26,23 +26,25 @@ def dobscv(X, y, k, rng=None, bad_case=False):
         while i > 0:
             n = k
             k_closest = []
-            chosen_instance = np.random.choice(possible_rand)
-            sorted_distances = np.sort(distance_matrix[chosen_instance])
-
-            if bad_case == True:
-                sorted_distances = sorted_distances[::-1]
+            chosen_instance = rng.choice(possible_rand)
+            # sorted_distances = np.sort(distance_matrix[chosen_instance])
+            distance_matrix[chosen_instance, chosen_instance] = np.inf
 
             index_sorted_distances = np.argsort(distance_matrix[chosen_instance])
+
+            if bad_case:
+                index_sorted_distances = index_sorted_distances[::-1]
 
             if len(possible_rand) < k:
                 n = len(possible_rand)
 
+            # k_closest.append(chosen_instance)
+            # k_closest.extend(index_sorted_distances[1:n])
             k_closest.append(chosen_instance)
-            k_closest.extend(index_sorted_distances[1:n])
-
+            k_closest.extend(index_sorted_distances[:n-1])
             for zero_column_line in k_closest:
-                distance_matrix[zero_column_line, :] = np.nan
-                distance_matrix[:, zero_column_line] = np.nan
+                distance_matrix[zero_column_line, :] = np.inf
+                distance_matrix[:, zero_column_line] = np.inf
 
             possible_rand = np.setdiff1d(possible_rand, k_closest)
 

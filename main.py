@@ -1,5 +1,6 @@
 import argparse
-from kfoldmethods.experiments import splitters_compare
+from kfoldmethods.experiments import splitters_compare, tune_classifiers, \
+    estimate_true_metrics, estimate_n_clusters
 from kfoldmethods.tests import test_splitters
 
 
@@ -38,12 +39,40 @@ def build_analysis_subparser(subparsers):
     return parser_analysis
 
 
+def build_hyperparameters_search_subparsers(subparsers):
+    parser_hp_search = subparsers.add_parser('hp-search', help='Analyze results of experiments.')
+    return parser_hp_search
+
+
+def build_estimate_true_metrics_subparsers(subparsers):
+    parser_true_estimate = subparsers.add_parser('true-estimate', help='Estimate true metrics for each dataset and classifier.')
+    parser_true_estimate.add_argument("-a", "--analyze", action="store_true", help="Analyze results of run")
+
+    # TODO: ds_range is deprecated. Remove it
+    parser_true_estimate.add_argument(
+        "--ds-range", type=int, nargs=2, default=(0, None), help="Which datasets to process, starting from ds 0")
+    parser_true_estimate.add_argument(
+        "--select-metric-results", action="store_true", 
+        help="Generate csv files containing only the metrics from the joblib files.")
+    return parser_true_estimate
+
+
+def build_estimate_n_clusters_subparsers(subparsers):
+    parser_n_clusters_estimate = subparsers.add_parser('n-clusters-estimate', help='Estimate number of clusters in each dataset.')
+    parser_n_clusters_estimate.add_argument("-a", "--analyze", action="store_true", help="Analyze results of run")
+    return parser_n_clusters_estimate
+
+
 def main():
     parser = argparse.ArgumentParser("k-Fold Partitioning Methods")
     subparsers = parser.add_subparsers(dest='subparser_name')
     parser_test = build_test_subparser(subparsers)
     parser_experiment = build_experiment_subparser(subparsers)
     parser_analysis = build_analysis_subparser(subparsers)
+    parser_hp = build_hyperparameters_search_subparsers(subparsers)
+    parser_true_estimate = build_estimate_true_metrics_subparsers(subparsers)
+    parser_n_clusters_estimate = build_estimate_n_clusters_subparsers(subparsers)
+
     args = parser.parse_args()
 
     if args.subparser_name == "test":
@@ -58,6 +87,18 @@ def main():
         splitters_compare.compare_variance_analysis(args)
         return
 
+    if args.subparser_name == "hp-search":
+        tune_classifiers.tune(args)
+        return
+
+    if args.subparser_name == "true-estimate":
+        estimate_true_metrics.main(args)
+        return
+
+    if args.subparser_name == "n-clusters-estimate":
+        estimate_n_clusters.main(args)
+        return
+    
 
 if __name__ == '__main__':
     main()

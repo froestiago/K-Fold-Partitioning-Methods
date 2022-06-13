@@ -39,13 +39,13 @@ def compare_variance(args):
     memory = Memory(path_cache)
 
     splitter_methods = [
-        DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False, random_state=0),
-        # DOBSCV.DOBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False, random_state=0),
-        CBDSCV.CBDSCVSplitter(n_splits=n_splits, shuffle=False, random_state=0),
-        CBDSCV_gmeans.CBDSCV_gmeansSplitter(shuffle=False, bad_case=False, random_state=0),
-        StratifiedKFold(n_splits=n_splits),
-        KFold(n_splits=n_splits),
-        StratifiedShuffleSplit(n_splits=n_splits, random_state=0)
+        # DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False, random_state=0),
+        DOBSCV.DOBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False, random_state=0),
+        # CBDSCV.CBDSCVSplitter(n_splits=n_splits, shuffle=False, random_state=0),
+        # CBDSCV_gmeans.CBDSCV_gmeansSplitter(shuffle=False, bad_case=False, random_state=0),
+        # StratifiedKFold(n_splits=n_splits),
+        # KFold(n_splits=n_splits),
+        # StratifiedShuffleSplit(n_splits=n_splits, random_state=0)
     ]
 
     # datasets = [load_iris, load_breast_cancer, load_digits]
@@ -86,18 +86,14 @@ def compare_variance(args):
                 print("Found: {}".format(estim.get_params()))
                 print("Results: {}".format(search.best_score_))
 
-            # I use a rng_sampler so that the resampling works the same way always independently of how many ds and models
-            # we use. Beside adding reproducibility, this also improves efficiency since we cache the results.
-            rng_sampler = np.random.RandomState(random_state)
-            for run in range(n_runs):
+            # Resample 80% of the dataset, without replacement
+            splitter = StratifiedShuffleSplit(n_splits=n_runs, train_size=0.8, random_state=123)
+            for run, (train_r, test_r) in enumerate(splitter.split(X, y)):
                 print("Run: [%d/%d]" % (run + 1, n_runs))
-                random_state_sampler = rng_sampler.randint(0, 99999999)
-                resample_indices = np.arange(0, X.shape[0])
-                resample_indices = resample(resample_indices, random_state=random_state_sampler)
-                logger.log_json(resample_indices.tolist(), '%s/indices.json' % ds)
+                logger.log_json(train_r.tolist(), '%s/indices.json' % ds)
 
-                X_r = X[resample_indices]
-                y_r = y[resample_indices]
+                X_r = X[train_r]
+                y_r = y[train_r]
                 for splitter in splitter_methods:
                     for train, test in splitter.split(X_r, y_r):
                         for model in classifiers:
@@ -118,11 +114,12 @@ def compare_variance(args):
                             logger.log_metric(f1, '%s/f1' % ns)
                             logger.log_json(confusion_mat, '%s/confusion_matrix.json' % ns)
         except Exception as e:
-            path_log_error = "error_%s" % datetime.now().isoformat()
-            print("Something occurred during processing of %s. Logging to: %s" % (ds, path_log_error))
-            e_str = ''.join(tb.format_exception(None, e, e.__traceback__))
-            with open(path_log_error, 'w') as f:
-                f.write(e_str)
+            raise e
+            # path_log_error = "error_%s" % datetime.now().isoformat()
+            # print("Something occurred during processing of %s. Logging to: %s" % (ds, path_log_error))
+            # e_str = ''.join(tb.format_exception(None, e, e.__traceback__))
+            # with open(path_log_error, 'w') as f:
+            #     f.write(e_str)
             
 
 def compare_variance_analysis(args):
