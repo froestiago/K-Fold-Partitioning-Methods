@@ -1,6 +1,6 @@
 import argparse
 from kfoldmethods.experiments import splitters_compare, tune_classifiers, \
-    estimate_true_metrics, estimate_n_clusters
+    estimate_true_metrics, estimate_n_clusters, compare_splitters_estimates
 from kfoldmethods.tests import test_splitters
 
 
@@ -11,6 +11,15 @@ def build_test_subparser(subparsers):
 
 def build_experiment_subparser(subparsers):
     parser_experiment = subparsers.add_parser('run', help='Run experiments.')
+
+    parser_experiment.add_argument(
+        "-a", "--analyze", action="store_true", help="Analyze tables of run results.")
+
+    parser_experiment.add_argument(
+        "-s", "--select", action="store_true", help="Select tables from run results.")
+    
+    parser_experiment.add_argument(
+        "-p", "--path-run", help="Path to run containing files for analysis and selection.")
 
     parser_experiment.add_argument(
         "-o", "--output-dir", type=str, default='run_data',
@@ -80,7 +89,8 @@ def main():
         return
 
     if args.subparser_name == "run":
-        splitters_compare.compare_variance(args)
+        compare_splitters_estimates.main(args)
+        # splitters_compare.compare_variance(args)
         return
     
     if args.subparser_name == "analyze":

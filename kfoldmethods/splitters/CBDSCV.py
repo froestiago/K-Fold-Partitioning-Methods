@@ -18,7 +18,7 @@ def CBDSCV(X, y, k_splits, k_clusters, rng=None, minibatch_kmeans=False):
         k_clusters = k_splits
 
     if minibatch_kmeans:
-        kmeans = MiniBatchKMeans(n_clusters=k_clusters)
+        kmeans = MiniBatchKMeans(n_clusters=k_clusters, random_state=123)
     else:
         kmeans = KMeans(n_clusters=k_clusters)
     X_new = kmeans.fit_transform(X)  # does not allow to choose the metric for distance
@@ -48,7 +48,8 @@ def CBDSCV(X, y, k_splits, k_clusters, rng=None, minibatch_kmeans=False):
 
 
 class CBDSCVSplitter:
-    def __init__(self, n_splits=None, n_clusters = None, random_state=None, shuffle=True):
+    def __init__(self, n_splits=None, n_clusters = None, random_state=None, shuffle=True, 
+                 minibatch_kmeans=False):
         """Split dataset indices according to the CBDSCV technique.
 
         Parameters
@@ -66,6 +67,7 @@ class CBDSCVSplitter:
         self.n_clusters = n_clusters
         self.random_state = random_state  # used for enabling the user to reproduce the results
         self.shuffle = shuffle
+        self.minibatch_kmeans = minibatch_kmeans
 
     def split(self, X, y=None, groups=None):
         """Generate indices to split data according to the DBSCV technique.
@@ -93,7 +95,8 @@ class CBDSCVSplitter:
         if self.shuffle:
             X, y = shuffle(X, y, random_state=rng)
 
-        folds, self.n_splits, self.n_clusters = CBDSCV(X, y,self.n_splits, self.n_clusters, rng=rng)
+        folds, self.n_splits, self.n_clusters = CBDSCV(
+            X, y,self.n_splits, self.n_clusters, rng=rng, minibatch_kmeans=self.minibatch_kmeans)
         
         for k in range(self.n_splits):
             test_fold_index = self.n_splits - k - 1  # start by using the last fold as the test fold

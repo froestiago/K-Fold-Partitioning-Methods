@@ -1,11 +1,13 @@
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import KFold, ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
 from kfoldmethods.datasets.pmlb_api import pmlb_get_ds_list
+from kfoldmethods.splitters import CBDSCV, DBSVC, DOBSCV, CBDSCV_gmeans
 
 run_data_dir = 'run_data'
 pipeline = Pipeline([('scaler', MinMaxScaler()), ('clf', LogisticRegression())])
@@ -38,3 +40,33 @@ true_estimates_random_state = 123
 estimate_n_clusters_n_iters = 50
 estimate_n_clusters_random_state = 123
 estimate_n_clusters_n_jobs = 5
+
+compare_splitters__n_splits = 10
+compare_splitters__n_jobs = 8
+
+splitter_methods = [
+    ('DBSCV', DBSVC.DBSCVSplitter, {
+        'n_splits': compare_splitters__n_splits, 'shuffle': True, 'bad_case': False, 'random_state': 123}),
+
+    ('DOBSCV', DOBSCV.DOBSCVSplitter, {
+        'n_splits': compare_splitters__n_splits, 'shuffle': True, 'bad_case': False, 'random_state': 123}),
+
+    ('CBDSCV', CBDSCV.CBDSCVSplitter, {
+        'n_splits': compare_splitters__n_splits, 'shuffle': True, 'random_state': 123, 'minibatch_kmeans': False}),
+
+    ('CBDSCV_Mini', CBDSCV.CBDSCVSplitter, {
+        'n_splits': compare_splitters__n_splits, 'shuffle': True, 'random_state': 123, 'minibatch_kmeans': True}),
+
+    # ('CBDSCV_gmeans', CBDSCV_gmeans.CBDSCV_gmeansSplitter, {
+    #     'shuffle': True, 'bad_case': False, 'random_state': 123}),
+
+    ('StratifiedKFold', StratifiedKFold, {
+        'n_splits': compare_splitters__n_splits, 'shuffle': True, 'random_state': 123}),
+    ('KFold', KFold, {
+        'n_splits': compare_splitters__n_splits, 'shuffle': True, 'random_state': 123}),
+    ('StratifiedShuffleSplit', StratifiedShuffleSplit, {
+        'n_splits': compare_splitters__n_splits, 'test_size': 0.1, 'random_state': 123}),
+    ('ShuffleSplit', ShuffleSplit, {
+        'n_splits': compare_splitters__n_splits, 'test_size': 0.1, 'random_state': 123}),
+]
+
