@@ -193,6 +193,7 @@ def select_df_results(args):
     running_time_df = pd.DataFrame()
     metrics_df = pd.DataFrame()
     for run_file in path_run.glob("*.joblib"):
+        print("Append data from file {}".format(run_file))
         run = joblib.load(run_file)
         run_running_time_df = run.select_running_time_results()
         run_metrics_df = run.select_metric_results()
