@@ -30,11 +30,12 @@ class CompareSplittersEstimatesResults:
             'test': test
         })
 
-    def insert_splitter_running_time(self, ds_name, clf_name, splitter_method, running_time):
+    def insert_splitter_running_time(self, ds_name, clf_name, splitter_method, splitter_object, running_time):
         self.records_splitters_running_time.append({
             'dataset_name': ds_name,
             'classifier_name': clf_name,
             'splitter_method': splitter_method,
+            'splitter_object': splitter_object,
             'running_time': running_time
         })
 
@@ -66,8 +67,10 @@ class CompareSplittersEstimatesResults:
         df = pd.DataFrame.from_records(self.records_metrics)
         return df
 
-    def select_running_time_results(self):
+    def select_running_time_results(self, return_splitter_obj: bool = False):
         df = pd.DataFrame.from_records(self.records_splitters_running_time)
+        if not return_splitter_obj:
+            df = df.drop(columns=['splitter_object'])
         return df
 
 
@@ -100,9 +103,17 @@ class CompareSplittersEstimates:
 
     def _compare_splitters(self, ds_name, clf_name):
         X, y = fetch_data(ds_name, return_X_y=True)
+        df_n_clusters = pd.read_csv(configs.compare_splitters__path_n_clusters)
 
         for splitter_name, splitter_class, splitter_params in configs.splitter_methods:
-            print("--- Running {}".format(splitter_name))
+            print("-- Running {}".format(splitter_name))
+
+            if splitter_name in configs.need_n_clusters:
+                n_clusters = round(df_n_clusters.loc[
+                    df_n_clusters['ds_name'] == ds_name, 'n_clusters_estimate'].values[0])
+                print("---- Using {} clusters".format(n_clusters))
+
+                splitter_params['n_clusters'] = n_clusters
 
             split_start = time.perf_counter()
             splitter = splitter_class(**splitter_params)
@@ -110,9 +121,12 @@ class CompareSplittersEstimates:
             split_execution_time = time.perf_counter() - split_start
 
             self.results.insert_splitter_running_time(
-                ds_name, clf_name, splitter_name, split_execution_time)
+                ds_name, clf_name, splitter_name, splitter, split_execution_time)
 
             for split_id, train, test in splits:
+                # print("---- Split [{}/{}]".format(
+                #     split_id + 1, configs.compare_splitters__n_splits))
+
                 clf = load_best_classifier_for_dataset(ds_name, clf_name)
                 clf.fit(X[train], y[train])
                 y_pred = clf.predict(X[test])
@@ -204,6 +218,7 @@ def main(args):
     output_dir.mkdir(exist_ok=True, parents=True)
     n_datasets = len(configs.datasets)
     step = 1
+    # run_compare_splitters_estimates(output_dir, 0, 3)
 
     joblib.Parallel(n_jobs=configs.compare_splitters__n_jobs)(
         joblib.delayed(run_compare_splitters_estimates)(

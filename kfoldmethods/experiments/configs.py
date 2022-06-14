@@ -43,6 +43,7 @@ estimate_n_clusters_n_jobs = 5
 
 compare_splitters__n_splits = 10
 compare_splitters__n_jobs = 8
+compare_splitters__path_n_clusters = "run_data/n_clusters_estimate/estimate_n_clusters.csv"
 
 splitter_methods = [
     ('DBSCV', DBSVC.DBSCVSplitter, {
@@ -70,3 +71,4 @@ splitter_methods = [
         'n_splits': compare_splitters__n_splits, 'test_size': 0.1, 'random_state': 123}),
 ]
 
+need_n_clusters = ['CBDSCV', 'CBDSCV_Mini', 'CBDSCV_gmeans']
