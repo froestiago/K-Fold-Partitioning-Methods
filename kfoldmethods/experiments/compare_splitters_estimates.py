@@ -185,7 +185,9 @@ def analyze(args):
         path_run = Path(args.path_run)
     else:
         path_run = Path('run_data/compare_splitters_estimates/2022-06-14T00:44:36/outputs')
-    analyze_running_time = True
+
+    path_true_estimates_summary = 'run_data/true_estimate/true_estimates_summary.csv'
+    analyze_running_time = False
     analyze_metrics = True
 
     # running time
@@ -200,8 +202,28 @@ def analyze(args):
         summary_rt.to_csv(path_run / 'summary_running_time.csv', float_format='%.5f')
 
     if analyze_metrics:
-        # TODO
-        pass
+        df_m = pd.read_csv(path_run / 'metrics_df.csv')
+        df_estimates = df_m.groupby(
+            by=['dataset_name', 'classifier_name', 'splitter_method', 'repeat_id', 'metric_name']).agg(
+                estimate=('metric_value', np.mean))
+        df_estimates.to_csv(path_run / 'splitters_estimate.csv', float_format='%.5f')
+
+        df_estimates_summary = df_estimates.groupby(
+            by=['dataset_name', 'classifier_name', 'splitter_method', 'metric_name']).agg(
+                expected_estimate=('estimate', np.mean), estimate_std=('estimate', np.std))
+        df_estimates_summary.to_csv(path_run / 'splitters_estimate_summary.csv', float_format='%.5f')
+
+        df_estimates_summary.reset_index(inplace=True)
+        df_true_estimates_summary = pd.read_csv(path_true_estimates_summary).rename(columns={'ds_name': 'dataset_name'})
+        # print(df_estimates_summary.index)
+        # print(df_estimates_summary.columns)
+        # print(df_true_estimates_summary.index)
+        # print(df_true_estimates_summary.columns)
+        df_bias_std_summary = pd.merge(
+            df_estimates_summary, df_true_estimates_summary, 
+            on=['dataset_name', 'classifier_name', 'metric_name'], how='inner')
+        df_bias_std_summary['bias'] = df_bias_std_summary['expected_estimate'] - df_bias_std_summary['true_value']
+        df_bias_std_summary.to_csv(path_run / 'bias_variance_tradeoff.csv', float_format='%.5f')
 
 
 def select_df_results(args):

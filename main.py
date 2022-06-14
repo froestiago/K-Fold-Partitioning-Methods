@@ -61,7 +61,7 @@ def build_estimate_true_metrics_subparsers(subparsers):
     parser_true_estimate.add_argument(
         "--ds-range", type=int, nargs=2, default=(0, None), help="Which datasets to process, starting from ds 0")
     parser_true_estimate.add_argument(
-        "--select-metric-results", action="store_true", 
+        "-s", "--select-metric-results", action="store_true", 
         help="Generate csv files containing only the metrics from the joblib files.")
     return parser_true_estimate
 

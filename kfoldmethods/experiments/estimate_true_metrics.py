@@ -228,6 +228,8 @@ def table_results(path_true_estimate_metrics):
 
 def analyze(args):
     plot_distributions = False
+    metric_tables = False
+    build_true_estimate_summary = True
     path_true_estimate_metrics = Path("true_estimate_metrics")
 
     if plot_distributions:
@@ -235,7 +237,22 @@ def analyze(args):
             path_csv = str(path_true_estimate_metrics / "true_estimate_{}.csv".format(i))
             plot_distributions_for_datasets(path_csv)
     
-    table_results(path_true_estimate_metrics)
+    if metric_tables:
+        table_results(path_true_estimate_metrics)
+    
+    if build_true_estimate_summary:
+        df_true_estimates = pd.DataFrame()
+        for f in path_true_estimate_metrics.glob("*.csv"):
+            df_run_true_estimates = pd.read_csv(f)
+            df_true_estimates = pd.concat((df_true_estimates, df_run_true_estimates), axis=0)
+        
+        df_true_estimates = df_true_estimates[df_true_estimates['metric_name'] != 'confusion_mat']
+        df_true_estimates.loc[:, 'metric_result'] = pd.to_numeric(df_true_estimates.loc[:, 'metric_result'])
+
+        df_true_estimates_summary = df_true_estimates.groupby(
+            by=['ds_name', 'classifier_name', 'metric_name']).agg(
+                true_value=('metric_result', np.mean))
+        df_true_estimates_summary.to_csv('true_estimates_summary.csv', float_format='%.4f')
 
 
 def run_true_metrics_estimate(output_dir, ds_idx_0, ds_idx_last):
