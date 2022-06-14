@@ -41,6 +41,8 @@ estimate_n_clusters_n_iters = 50
 estimate_n_clusters_random_state = 123
 estimate_n_clusters_n_jobs = 5
 
+compare_splitters__n_repeats = 20
+comapre_splitters__repeats_random_states = [123 + i for i in range(compare_splitters__n_repeats)]
 compare_splitters__n_splits = 10
 compare_splitters__n_jobs = 8
 compare_splitters__path_n_clusters = "run_data/n_clusters_estimate/estimate_n_clusters.csv"

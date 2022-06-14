@@ -4,6 +4,7 @@ from sklearn import clone
 import joblib
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.model_selection import ShuffleSplit
+from sklearn.utils import resample
 
 
 def load_best_classifier_for_dataset(
@@ -48,3 +49,9 @@ def estimate_n_clusters(X, n_iters=50, sample_size=None, random_state=123, retur
     
     return np.mean(n_clusters_list), np.std(n_clusters_list)
 
+
+def bootstrap_step(X: np.ndarray, random_state=123):
+    n_samples = X.shape[0]
+    indices = np.arange(0, n_samples)
+    indices_r = resample(indices, n_samples=n_samples, random_state=random_state)
+    return indices_r
