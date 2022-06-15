@@ -30,12 +30,14 @@ class TrueMetricsEstimateResults:
         })
 
     def insert_classifier(self, ds_name, split_id, clf_name, classifier_object):
-        self.records_classifiers.append({
-            'ds_name': ds_name,
-            'split_id': split_id,
-            'classifier_name': clf_name,
-            'classifier_object': classifier_object
-        })
+        # don't save classifiers to avoid getting the disk full
+        pass
+        # self.records_classifiers.append({
+        #     'ds_name': ds_name,
+        #     'split_id': split_id,
+        #     'classifier_name': clf_name,
+        #     'classifier_object': classifier_object
+        # })
 
     def insert_metric_result(self, ds_name, split_id, clf_name, metric_name, metric_result):
         self.records_metrics.append({
@@ -76,7 +78,8 @@ class TrueMetricsEstimate:
         X, y = fetch_data(ds_name, return_X_y=True)
 
         splitter = StratifiedShuffleSplit(
-            n_splits=configs.true_estimates_n_splits, random_state=configs.true_estimates_random_state)
+            n_splits=configs.true_estimates_n_splits, test_size=configs.true_estimates_test_size,
+            random_state=configs.true_estimates_random_state)
 
         for split_id, (train, test) in enumerate(splitter.split(X, y)):
             print("Split [%d/%d]" % (split_id, configs.true_estimates_n_splits - 1))
@@ -115,25 +118,13 @@ class TrueMetricsEstimate:
 
 def select_metric_results():
     path_true_estimates = Path('run_data/true_estimate')
-
-    latest = None
-    latest_date = None
-    for dir in path_true_estimates.glob("*"):
-        run_date = datetime.fromisoformat(str(dir.stem))
-        
-        if latest is None:
-            latest = dir
-            latest_date = run_date
-        elif run_date > latest_date:
-            latest = dir
-            latest_date = run_date
     
     path_true_estimate_metrics = Path('true_estimate_metrics')
     path_true_estimate_metrics.mkdir(exist_ok=True, parents=True)
     for i in range(27):
         print("DS INDEX: [%d/%d]" % (i, 26))
         results = joblib.load(
-            Path("run_data/true_estimate/2022-06-12T03:15:59/results_{}_to_{}.joblib".format(i, i)))
+            Path("run_data/true_estimate/2022-06-14T18:24:11/results_{}_to_{}.joblib".format(i, i)))
         metrics_df = results.select_metric_results()
         metrics_df = pd.DataFrame(metrics_df)
 
