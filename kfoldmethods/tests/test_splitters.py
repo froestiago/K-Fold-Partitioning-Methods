@@ -200,12 +200,12 @@ def test_all():
          [-2.8, 1.3, 2.3]])  # y = 4
     blob_std = np.array([0.7, 0.3, 0.6, 0.3, 0.2])
 
-    X, y = make_blobs(n_samples=30, centers=blob_centers, cluster_std=blob_std, shuffle=True)
+    X, y = make_blobs(n_samples=300, centers=blob_centers, cluster_std=blob_std, shuffle=True)
     # X, y = load_digits(return_X_y = True)
     # X, y = fetch_data('mushroom', return_X_y=True)
     # X, y = load_wine(return_X_y=True)
     # X, y = load_iris(return_X_y=True)
-    n_splits = 3
+    n_splits = 10
 
     bad_case_splitter_dbscv = DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=True)
     splitter_dbscv = DBSVC.DBSCVSplitter(n_splits=n_splits, shuffle=False, bad_case=False)
@@ -215,29 +215,31 @@ def test_all():
 
     splitter_stratified_cv = StratifiedKFold(n_splits=n_splits, shuffle=False)
 
-    splitter_cbdscv = CBDSCV.CBDSCVSplitter(n_splits=None, n_clusters=None)
+    splitter_cbdscv = CBDSCV.CBDSCVSplitter(n_splits=n_splits, n_clusters=None)
 
-    splitter_cbdscv_gmeans = CBDSCV_gmeans.CBDSCV_gmeansSplitter(bad_case=False)
+    splitter_cbdscv_gmeans = CBDSCV_gmeans.CBDSCV_gmeansSplitter(n_splits=3, bad_case=False)
 
     pipeline = Pipeline([
         ('scaler', StandardScaler()),
         ('clf', LogisticRegression())
     ])
-
-    # scores = cross_val_score(pipeline, X, y=y, cv=splitter_cbdscv_gmeans)
-    # print("-------------------")
-    # print("Results with CBDSCV gmeans:")
-    # # print("Scores: ", scores)
-    # # print("Mean {} Median {} STD {}".format(np.mean(scores), np.median(scores), np.std(scores)))
-    # print("STD: ", np.std(scores))
-
-    scores = cross_val_score(pipeline, X, y=y, cv=splitter_cbdscv)
+    print(len(X))
+    scores = cross_val_score(pipeline, X, y=y, cv=splitter_cbdscv_gmeans)
     print("-------------------")
-    print("Results with CBDSCV:")
+    print("Results with CBDSCV gmeans:")
     print("Scores: ", scores)
     print("Mean {} Median {} STD {}".format(np.mean(scores), np.median(scores), np.std(scores)))
-    print('numero de folds: ', splitter_cbdscv.n_splits)
-    print('numero de clusters: ', splitter_cbdscv.n_clusters)
+    print('numero de folds: ', splitter_cbdscv_gmeans.n_splits)
+    print('numero de clusters: ', splitter_cbdscv_gmeans.n_clusters)
+    # print("STD: ", np.std(scores))
+
+    # scores = cross_val_score(pipeline, X, y=y, cv=splitter_cbdscv)
+    # print("-------------------")
+    # print("Results with CBDSCV:")
+    # print("Scores: ", scores)
+    # print("Mean {} Median {} STD {}".format(np.mean(scores), np.median(scores), np.std(scores)))
+    # print('numero de folds: ', splitter_cbdscv.n_splits)
+    # print('numero de clusters: ', splitter_cbdscv.n_clusters)
     # print("STD: ", np.std(scores))
 
     # scores = cross_val_score(pipeline, X, y=y, cv=splitter_dobscv)

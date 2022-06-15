@@ -7,7 +7,7 @@ import copy
 from .utils import circular_append
 
 
-def CBDSCV_gmeans(X, y, rng=None, bad_case = False):
+def CBDSCV_gmeans(X, y, k_splits, rng=None, bad_case = False):
     if rng is None:
         rng = np.random.RandomState()
 
@@ -17,6 +17,9 @@ def CBDSCV_gmeans(X, y, rng=None, bad_case = False):
     centers = gmeans_instance.get_centers()
 
     k = len(clusters)
+    if k_splits == None:
+        k_splits = k
+    
     index_list = []
 
     for i in range(k):
@@ -31,13 +34,15 @@ def CBDSCV_gmeans(X, y, rng=None, bad_case = False):
         for x in sorted_index_distances:index_list.append(cluster_indexes[x])
 
 
-    folds = [[] for _ in range(k)] #list with kfolds (empty)
-    folds = circular_append(index_list, folds, k)
+    folds = [[] for _ in range(k_splits)] #list with kfolds (empty)
+    folds = circular_append(index_list, folds, k_splits)
+    print(folds)
+    print(k)
 
-    return folds, k
+    return folds, k, k_splits
 
 class CBDSCV_gmeansSplitter:
-    def __init__(self, random_state=None, shuffle=True, bad_case=False):
+    def __init__(self, n_splits = None,random_state=None, shuffle=True, bad_case=False):
         """Split dataset indices according to the DBSCV technique.
 
         Parameters
@@ -51,7 +56,9 @@ class CBDSCV_gmeansSplitter:
         """
         # in sklearn, generally, we do not check the arguments in the initialization function.
         # There is a reason for this.
-        #self.n_splits = n_splits
+        self.n_splits = n_splits
+        self.n_clusters = None  # not a parameter but how many clusters the gmeans found on the dataset
+
         self.random_state = random_state  # used for enabling the user to reproduce the results
         self.shuffle = shuffle
         self.bad_case = bad_case
@@ -83,16 +90,16 @@ class CBDSCV_gmeansSplitter:
             X, y = shuffle(X, y, random_state=rng)
 
         if self.bad_case == False:
-            folds, n_splits = CBDSCV_gmeans(X, y, rng=rng, bad_case=False)
+            folds, self.n_clusters, self.n_splits = CBDSCV_gmeans(X, y, self.n_splits, rng=rng, bad_case=False)
         else:
-            folds, n_splits = CBDSCV_gmeans(X, y, rng=rng, bad_case=True)
+            folds, self.n_clusters, self.n_splits = CBDSCV_gmeans(X, y, self.n_splits, rng=rng, bad_case=True)
 
 
-        for k in range(n_splits):
-            test_fold_index = n_splits - k - 1  # start by using the last fold as the test fold
+        for k in range(self.n_splits):
+            test_fold_index = self.n_splits - k - 1  # start by using the last fold as the test fold
             ind_train = []
             ind_test = []
-            for fold_index in range(n_splits):
+            for fold_index in range(self.n_splits):
                 if fold_index != test_fold_index:
                     ind_train += copy.copy(folds[fold_index])
                 else:
