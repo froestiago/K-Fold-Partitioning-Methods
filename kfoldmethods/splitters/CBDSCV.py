@@ -22,13 +22,11 @@ def CBDSCV(X, y, k_splits, k_clusters, rng=None, minibatch_kmeans=False):
     else:
         kmeans = KMeans(n_clusters=k_clusters)
     X_new = kmeans.fit_transform(X)  # does not allow to choose the metric for distance
-
     cluster_index = np.argsort(X_new)
     cluster_index = [i[0] for i in cluster_index]
 
-    clusters = [[] for _ in range(k_splits)]  # list with k clusters (empty)
+    clusters = [[] for _ in range(k_clusters)]  # list with k clusters (empty)
     i, size = 0, len(X_new)
-
     while i < size:
         element = (i, X_new[i][cluster_index[i]])
         clusters[cluster_index[i]].append(element)
