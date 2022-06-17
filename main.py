@@ -50,6 +50,7 @@ def build_analysis_subparser(subparsers):
 
 def build_hyperparameters_search_subparsers(subparsers):
     parser_hp_search = subparsers.add_parser('hp-search', help='Analyze results of experiments.')
+    parser_hp_search.add_argument('-i', '--imbalanced', action='store_true', help='Use imbalanced datasets.')
     return parser_hp_search
 
 

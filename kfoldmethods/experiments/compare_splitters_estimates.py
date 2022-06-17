@@ -6,7 +6,7 @@ import pandas as pd
 from pmlb import fetch_data
 import time
 
-from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 
 from kfoldmethods.experiments import configs
 from kfoldmethods.experiments.utils import bootstrap_step, estimate_n_clusters, load_best_classifier_for_dataset
@@ -21,7 +21,7 @@ class CompareSplittersEstimatesResults:
         self.records_splitters_running_time = []
 
     def insert_dataset_split(
-            self, ds_name, clf_name, splitter_method, repeat_id, split_id, indices_r, 
+            self, ds_name, clf_name, splitter_method, repeat_id, n_splits, split_id, indices_r, 
             train, test):
         # train and test are indices wrt to the repetition indices.
         # to recover the original instance of train instance 0 one would do:
@@ -31,6 +31,7 @@ class CompareSplittersEstimatesResults:
             'classifier_name': clf_name,
             'splitter_method': splitter_method,
             'repeat_id': repeat_id,
+            'n_splits': n_splits,
             'split_id': split_id,
             'repetition_indices': indices_r,
             'train': train,
@@ -38,12 +39,13 @@ class CompareSplittersEstimatesResults:
         })
 
     def insert_splitter_running_time(
-            self, ds_name, clf_name, splitter_method, repeat_id, splitter_object, running_time):
+            self, ds_name, clf_name, splitter_method, repeat_id, n_splits, splitter_object, running_time):
         self.records_splitters_running_time.append({
             'dataset_name': ds_name,
             'classifier_name': clf_name,
             'splitter_method': splitter_method,
             'repeat_id': repeat_id,
+            'n_splits': n_splits,
             'splitter_object': splitter_object,
             'running_time': running_time
         })
@@ -61,21 +63,22 @@ class CompareSplittersEstimatesResults:
         # })
 
     def insert_metric_result(
-            self, ds_name, clf_name, splitter_method, repeat_id, split_id, metric_name, metric_value):
+            self, ds_name, clf_name, splitter_method, repeat_id, n_splits, split_id, metric_name, metric_value):
         self.records_metrics.append({
             'dataset_name': ds_name,
             'classifier_name': clf_name,
             'splitter_method': splitter_method,
             'repeat_id': repeat_id,
+            'n_splits': n_splits,
             'split_id': split_id,
             'metric_name': metric_name,
             'metric_value': metric_value
         })
 
-    def insert_metric_results(self, ds_name, clf_name, splitter_method, repeat_id, split_id, metrics_name_value):
+    def insert_metric_results(self, ds_name, clf_name, splitter_method, repeat_id, n_splits, split_id, metrics_name_value):
         for metric_name, metric_value in metrics_name_value:
             self.insert_metric_result(
-                ds_name, clf_name, splitter_method, repeat_id, split_id, metric_name, metric_value)
+                ds_name, clf_name, splitter_method, repeat_id, n_splits, split_id, metric_name, metric_value)
 
     def select_metric_results(self):
         df = pd.DataFrame.from_records(self.records_metrics)
@@ -105,13 +108,14 @@ class CompareSplittersEstimates:
 
     def _compute_metrics(self, y_test, y_pred):
         accuracy = accuracy_score(y_test, y_pred)
+        balanced_accuracy = balanced_accuracy_score(y_test, y_pred)
         precision = precision_score(y_test, y_pred, average='macro')
         recall = recall_score(y_test, y_pred, average='macro')
         f1 = f1_score(y_test, y_pred, average='macro')
 
         metric_results = [
             ('accuracy', accuracy), ('precision', precision), 
-            ('recall', recall), ('f1', f1)
+            ('recall', recall), ('f1', f1), ('balanced_accuracy', balanced_accuracy)
         ]
         return metric_results
 
@@ -130,36 +134,39 @@ class CompareSplittersEstimates:
                 indices_r = bootstrap_step(X, random_state=rs)
                 X_r, y_r = X[indices_r, :], y[indices_r]
 
-                if splitter_name in configs.need_n_clusters:
-                    n_clusters = round(df_n_clusters.loc[
-                        df_n_clusters['ds_name'] == ds_name, 'n_clusters_estimate'].values[0])
-                    print("---- Using {} clusters".format(n_clusters))
+                for n_splits in configs.compare_splitters__n_splits:
+                    splitter_params['n_splits'] = n_splits
 
-                    splitter_params['n_clusters'] = n_clusters
+                    if splitter_name in configs.need_n_clusters:
+                        n_clusters = round(df_n_clusters.loc[
+                            df_n_clusters['ds_name'] == ds_name, 'n_clusters_estimate'].values[0])
+                        print("---- Using {} clusters".format(n_clusters))
 
-                split_start = time.perf_counter()
-                splitter = splitter_class(**splitter_params)
-                splits = [(split_id, train, test) \
-                          for split_id, (train, test) in enumerate(splitter.split(X_r, y_r))]
-                        
-                split_execution_time = time.perf_counter() - split_start
+                        splitter_params['n_clusters'] = n_clusters
 
-                self.results.insert_splitter_running_time(
-                    ds_name, clf_name, splitter_name, repeat_id, splitter, split_execution_time)
+                    split_start = time.perf_counter()
+                    splitter = splitter_class(**splitter_params)
+                    splits = [(split_id, train, test) \
+                            for split_id, (train, test) in enumerate(splitter.split(X_r, y_r))]
+                            
+                    split_execution_time = time.perf_counter() - split_start
 
-                for split_id, train, test in splits:
-                    clf = load_best_classifier_for_dataset(ds_name, clf_name)
-                    clf.fit(X_r[train], y_r[train])
-                    y_pred = clf.predict(X_r[test])
+                    self.results.insert_splitter_running_time(
+                        ds_name, clf_name, splitter_name, repeat_id, n_splits, splitter, split_execution_time)
 
-                    metric_results = self._compute_metrics(y_r[test], y_pred)
+                    for split_id, train, test in splits:
+                        clf = load_best_classifier_for_dataset(ds_name, clf_name)
+                        clf.fit(X_r[train], y_r[train])
+                        y_pred = clf.predict(X_r[test])
 
-                    self.results.insert_dataset_split(
-                        ds_name, clf_name, splitter_name, repeat_id, split_id, indices_r, train, test)
-                    self.results.insert_classifier(
-                        ds_name, clf_name, splitter_name, repeat_id, split_id, clf)
-                    self.results.insert_metric_results(
-                        ds_name, clf_name, splitter_name, repeat_id, split_id, metric_results)
+                        metric_results = self._compute_metrics(y_r[test], y_pred)
+
+                        self.results.insert_dataset_split(
+                            ds_name, clf_name, splitter_name, repeat_id, n_splits, split_id, indices_r, train, test)
+                        # self.results.insert_classifier(
+                        #     ds_name, clf_name, splitter_name, repeat_id, split_id, clf)
+                        self.results.insert_metric_results(
+                            ds_name, clf_name, splitter_name, repeat_id, n_splits, split_id, metric_results)
 
     def compare_splitters_estimates(self):
         for ds_idx, ds_name in enumerate(configs.datasets):
@@ -204,12 +211,12 @@ def analyze(args):
     if analyze_metrics:
         df_m = pd.read_csv(path_run / 'metrics_df.csv')
         df_estimates = df_m.groupby(
-            by=['dataset_name', 'classifier_name', 'splitter_method', 'repeat_id', 'metric_name']).agg(
+            by=['dataset_name', 'classifier_name', 'splitter_method', 'repeat_id', 'n_splits', 'metric_name']).agg(
                 estimate=('metric_value', np.mean))
         df_estimates.to_csv(path_run / 'splitters_estimate.csv', float_format='%.5f')
 
         df_estimates_summary = df_estimates.groupby(
-            by=['dataset_name', 'classifier_name', 'splitter_method', 'metric_name']).agg(
+            by=['dataset_name', 'classifier_name', 'splitter_method', 'n_splits', 'metric_name']).agg(
                 expected_estimate=('estimate', np.mean), estimate_std=('estimate', np.std))
         df_estimates_summary.to_csv(path_run / 'splitters_estimate_summary.csv', float_format='%.5f')
 

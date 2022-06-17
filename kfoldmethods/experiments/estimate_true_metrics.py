@@ -3,7 +3,7 @@ from pathlib import Path
 import joblib
 import pandas as pd
 from pmlb import fetch_data
-from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 from sklearn.model_selection import StratifiedShuffleSplit
 from joblib import Parallel, delayed
 from kfoldmethods.experiments import configs
@@ -59,9 +59,10 @@ class TrueMetricsEstimateResults:
 
 class TrueMetricsEstimate:
     def __init__(self, output_dir=None, ds_idx_0=None, ds_idx_last=None):
+        self.datasets = configs.datasets 
         self.results = TrueMetricsEstimateResults()
         self.ds_idx_0 = ds_idx_0 if ds_idx_0 is not None else 0
-        self.ds_idx_last = ds_idx_last if ds_idx_last is not None else len(configs.datasets)-1
+        self.ds_idx_last = ds_idx_last if ds_idx_last is not None else len(self.datasets)-1
 
         if output_dir is None:
             self.path_results = Path(output_dir) / \
@@ -91,13 +92,13 @@ class TrueMetricsEstimate:
             y_pred = clf.predict(X_test)
             
             accuracy = accuracy_score(y_test, y_pred)
+            balanced_acc = balanced_accuracy_score(y_test, y_pred)
             precision = precision_score(y_test, y_pred, average='macro')
             recall = recall_score(y_test, y_pred, average='macro')
             f1 = f1_score(y_test, y_pred, average='macro')
-            confusion_mat = confusion_matrix(y_test, y_pred)
             metric_results = [
                 ('accuracy', accuracy), ('precision', precision), ('recall', recall),
-                ('f1', f1), ('confusion_mat', confusion_mat)
+                ('f1', f1), ('balanced_accuracy', balanced_acc)
             ]
 
             self.results.insert_dataset_split(ds_name, split_id, clf_class_name, train, test)
@@ -107,7 +108,7 @@ class TrueMetricsEstimate:
             joblib.dump(self.results, self.path_results)
 
     def estimate_true_metrics(self):
-        for ds_idx, ds_name in enumerate(configs.datasets):
+        for ds_idx, ds_name in enumerate(self.datasets):
             if self.ds_idx_0 <= ds_idx <= self.ds_idx_last:
                 for params in configs.pipeline_params:
                     clf_class_name = params['clf'][0].__class__.__name__
@@ -124,7 +125,7 @@ def select_metric_results():
     for i in range(27):
         print("DS INDEX: [%d/%d]" % (i, 26))
         results = joblib.load(
-            Path("run_data/true_estimate/2022-06-14T18:24:11/results_{}_to_{}.joblib".format(i, i)))
+            Path("run_data/true_estimate/2022-06-15T21:22:34/results_{}_to_{}.joblib".format(i, i)))
         metrics_df = results.select_metric_results()
         metrics_df = pd.DataFrame(metrics_df)
 
@@ -249,7 +250,8 @@ def analyze(args):
 def run_true_metrics_estimate(output_dir, ds_idx_0, ds_idx_last):
     print("Running datasets %d to %d" % (ds_idx_0, ds_idx_last))
     TrueMetricsEstimate(
-        output_dir=output_dir, ds_idx_0=ds_idx_0, ds_idx_last=ds_idx_last).estimate_true_metrics()
+        output_dir=output_dir, ds_idx_0=ds_idx_0, 
+        ds_idx_last=ds_idx_last).estimate_true_metrics()
     print("Finished datasets %d to %d" % (ds_idx_0, ds_idx_last))
 
 
@@ -264,7 +266,8 @@ def main(args):
         return
     
     output_dir = Path('run_data/true_estimate') / datetime.now().isoformat(timespec='seconds')
-    n_datasets = len(configs.datasets)
+    datasets = configs.datasets
+    n_datasets = len(datasets)
     step = 1
     
     Parallel(n_jobs=configs.true_estimates_n_jobs)(

@@ -1,9 +1,13 @@
+from pathlib import Path
 from random import random
+import pandas as pd
 from sklearn.cluster import KMeans, MiniBatchKMeans, AgglomerativeClustering
 from sklearn.datasets import make_blobs
 import matplotlib.pyplot as plt
 import numpy as np
 
+from kfoldmethods.datasets import pmlb_api
+from kfoldmethods.experiments import configs
 from kfoldmethods.splitters.CBDSCV import CBDSCVSplitter
 import timeit
 
@@ -53,8 +57,30 @@ def main():
     print("Elapsed time for minibatch_kmeans: %.2f" % (end - start))
 
     # plot_ds(X, y_pred)
+
+
+def datasets_info():
+    df_datasets = pd.read_csv("kfoldmethods/datasets/pmlb_datasets.csv")
+    selected = configs.datasets_balanced
+    path_dataset_info = Path(configs.dataset_info__output_dir)
+    path_dataset_info.mkdir(exist_ok=True, parents=True)
+    
+    df_selected = df_datasets.loc[
+        df_datasets['Dataset'].isin(selected), 
+        ['Dataset', 'n_observations', 'n_features', 'n_classes', 'Imbalance']]
+    df_selected = df_selected.sort_values(by='Dataset')
+    df_selected.to_csv(Path(configs.dataset_info__output_dir) / 'datasets.csv', index=False)
+    print(df_selected)
+
+    selected_imb = configs.datasets_imb
+    df_selected = df_datasets.loc[
+        df_datasets['Dataset'].isin(selected_imb), 
+        ['Dataset', 'n_observations', 'n_features', 'n_classes', 'Imbalance']]
+    df_selected = df_selected.sort_values(by='Dataset')
+    df_selected.to_csv(Path(configs.dataset_info__output_dir) / 'datasets_imb.csv', index=False)
+    print(df_selected)
     
 
 
 if __name__ == "__main__":
-    main()
+    datasets_info()

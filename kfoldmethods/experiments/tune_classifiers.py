@@ -19,7 +19,8 @@ def save_hp_tuning(ds_name: str, search):
     
 
 def tune(args):
-    for ds_name in configs.datasets:
+    datasets = configs.datasets
+    for ds_name in datasets:
         X, y = fetch_data(ds_name, return_X_y=True)
         print("Finding hyperparameters for {}. Shape: {}".format(ds_name, X.shape))
 
@@ -28,7 +29,8 @@ def tune(args):
             print("Looking for best hyperparameters of %s ..." % params['clf'][0].__class__)
 
             search = GridSearchCV(
-                pipeline, params, refit=True, cv=configs.tuning_folds, n_jobs=configs.tuning_grid_seach_n_jobs)
+                pipeline, params, refit=True, cv=configs.tuning_folds, n_jobs=configs.tuning_grid_seach_n_jobs,
+                scoring=configs.tuning_grid_search_scoring)
             search.fit(X, y)
 
             params = search.best_estimator_.get_params()

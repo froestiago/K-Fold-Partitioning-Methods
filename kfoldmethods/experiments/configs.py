@@ -12,10 +12,10 @@ from kfoldmethods.splitters import CBDSCV, DBSVC, DOBSCV, CBDSCV_gmeans
 run_data_dir = 'run_data'
 pipeline = Pipeline([('scaler', MinMaxScaler()), ('clf', LogisticRegression())])
 pipeline_params = [
-    {'clf': [LogisticRegression(max_iter=100100, random_state=0, class_weight='balanced')], 
+    {'clf': [LogisticRegression(max_iter=10010, random_state=0, class_weight='balanced')], 
     'clf__C': [0.003, 0.03, 0.3, 3.0, 30.0]},
 
-    {'clf': [SVC(kernel='rbf', max_iter=100100, random_state=0, class_weight='balanced')], 
+    {'clf': [SVC(kernel='rbf', max_iter=10010, random_state=0, class_weight='balanced')], 
         'clf__C': [0.3, 3.0, 30.0, 300.0],
         'clf__gamma': [0.00003, 0.0003, 0.003, 0.03, 0.3]},
         
@@ -27,13 +27,29 @@ pipeline_params = [
 ]
 
 tuning_folds = 10
-tuning_grid_seach_n_jobs = 4
+tuning_grid_seach_n_jobs = 8
+tuning_grid_search_scoring = 'balanced_accuracy'
 classifier_hyperparameters_output = "%s/classifier_hyperparameters" % run_data_dir
 
-datasets = pmlb_get_ds_list(task='classification', n_samples=(200, 2000), verbose=False)
-datasets = datasets[::3]
+# datasets = pmlb_get_ds_list(task='classification', n_samples=(200, 2000), verbose=False)
+# datasets = datasets[::3]
+#
+datasets = [
+    'confidence', 'chess', 'analcatdata_happiness', 'analcatdata_japansolvent', 'vote', 'colic', 'dna',
+    'soybean', 'movement_libras', 'analcatdata_dmft', 'allhyper', 'appendicitis', 'page_blocks', 
+    'analcatdata_lawsuit', 'backache', 'flare', 'analcatdata_cyyoung9302',
+    'hepatitis', 'analcatdata_cyyoung8092', 'car']
 
-true_estimates_n_splits = 400
+datasets_balanced = [
+    'confidence', 'chess',  'analcatdata_happiness', 'analcatdata_japansolvent', 'vote', 'colic', 'dna',
+    'soybean', 'movement_libras', 'analcatdata_dmft']
+datasets_imb = [
+    'allhyper', 'appendicitis', 'page_blocks', 'analcatdata_lawsuit', 'backache', 'flare', 'analcatdata_cyyoung9302',
+    'hepatitis', 'analcatdata_cyyoung8092', 'car']
+dataset_info__output_dir = 'run_data/dataset_info'
+
+
+true_estimates_n_splits = 200
 true_estimates_test_size = 0.1
 true_estimates_n_jobs = 8
 true_estimates_random_state = 123
@@ -44,34 +60,34 @@ estimate_n_clusters_n_jobs = 5
 
 compare_splitters__n_repeats = 20
 comapre_splitters__repeats_random_states = [123 + i for i in range(compare_splitters__n_repeats)]
-compare_splitters__n_splits = 10
+compare_splitters__n_splits = [2, 5, 10]
 compare_splitters__n_jobs = 8
 compare_splitters__path_n_clusters = "run_data/n_clusters_estimate/estimate_n_clusters.csv"
 
 splitter_methods = [
     ('DBSCV', DBSVC.DBSCVSplitter, {
-        'n_splits': compare_splitters__n_splits, 'shuffle': True, 'bad_case': False, 'random_state': 123}),
+        'shuffle': True, 'bad_case': False, 'random_state': 123}),
 
     ('DOBSCV', DOBSCV.DOBSCVSplitter, {
-        'n_splits': compare_splitters__n_splits, 'shuffle': True, 'bad_case': False, 'random_state': 123}),
+        'shuffle': True, 'bad_case': False, 'random_state': 123}),
 
     ('CBDSCV', CBDSCV.CBDSCVSplitter, {
-        'n_splits': compare_splitters__n_splits, 'shuffle': True, 'random_state': 123, 'minibatch_kmeans': False}),
+        'shuffle': True, 'random_state': 123, 'minibatch_kmeans': False}),
 
     ('CBDSCV_Mini', CBDSCV.CBDSCVSplitter, {
-        'n_splits': compare_splitters__n_splits, 'shuffle': True, 'random_state': 123, 'minibatch_kmeans': True}),
+        'shuffle': True, 'random_state': 123, 'minibatch_kmeans': True}),
 
     # ('CBDSCV_gmeans', CBDSCV_gmeans.CBDSCV_gmeansSplitter, {
     #     'shuffle': True, 'bad_case': False, 'random_state': 123}),
 
     ('StratifiedKFold', StratifiedKFold, {
-        'n_splits': compare_splitters__n_splits, 'shuffle': True, 'random_state': 123}),
+        'shuffle': True, 'random_state': 123}),
     ('KFold', KFold, {
-        'n_splits': compare_splitters__n_splits, 'shuffle': True, 'random_state': 123}),
+        'shuffle': True, 'random_state': 123}),
     ('StratifiedShuffleSplit', StratifiedShuffleSplit, {
-        'n_splits': compare_splitters__n_splits, 'test_size': 0.1, 'random_state': 123}),
+        'test_size': 0.1, 'random_state': 123}),
     ('ShuffleSplit', ShuffleSplit, {
-        'n_splits': compare_splitters__n_splits, 'test_size': 0.1, 'random_state': 123}),
+        'test_size': 0.1, 'random_state': 123}),
 ]
 
 need_n_clusters = ['CBDSCV', 'CBDSCV_Mini', 'CBDSCV_gmeans']
