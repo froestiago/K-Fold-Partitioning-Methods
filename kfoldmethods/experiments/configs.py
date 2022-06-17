@@ -59,6 +59,8 @@ estimate_n_clusters_random_state = 123
 estimate_n_clusters_n_jobs = 5
 
 compare_splitters__n_repeats = 20
+compare_splitters__repeat_test_size = 0.1
+comapre_splitters__repeats_random_state = 456
 comapre_splitters__repeats_random_states = [123 + i for i in range(compare_splitters__n_repeats)]
 compare_splitters__n_splits = [2, 5, 10]
 compare_splitters__n_jobs = 8

@@ -7,6 +7,7 @@ from pmlb import fetch_data
 import time
 
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
+from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedShuffleSplit
 
 from kfoldmethods.experiments import configs
 from kfoldmethods.experiments.utils import bootstrap_step, estimate_n_clusters, load_best_classifier_for_dataset
@@ -126,12 +127,14 @@ class CompareSplittersEstimates:
         for splitter_name, splitter_class, splitter_params in configs.splitter_methods:
             print("-- Running {}".format(splitter_name))
 
-            for repeat_id in range(configs.compare_splitters__n_repeats):
+            repeat_splitter = StratifiedShuffleSplit(
+                n_splits=configs.compare_splitters__n_repeats, 
+                test_size=configs.compare_splitters__repeat_test_size,
+                random_state=configs.comapre_splitters__repeats_random_state)
+            
+            for repeat_id, (indices_r, _) in enumerate(repeat_splitter.split(X, y)):
                 print("---- Repeat [{}/{}]".format(
                     repeat_id + 1, configs.compare_splitters__n_repeats))
-
-                rs = configs.comapre_splitters__repeats_random_states[repeat_id]
-                indices_r = bootstrap_step(X, random_state=rs)
                 X_r, y_r = X[indices_r, :], y[indices_r]
 
                 for n_splits in configs.compare_splitters__n_splits:
