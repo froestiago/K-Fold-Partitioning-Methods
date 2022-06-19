@@ -77,7 +77,7 @@ def run_n_clusters_estimate(output_dir, idx_first, idx_last):
 
 def analyze(args):
     results_df = pd.DataFrame()
-    path_results = Path("run_data/n_clusters_estimate/2022-06-15T22:23:22")
+    path_results = Path("run_data/n_clusters_estimate/2022-06-18T00:00:29")
     for path_run in path_results.glob("*.joblib"):
         run_results = joblib.load(path_run)
         run_results_df = run_results.select_estimate_results()

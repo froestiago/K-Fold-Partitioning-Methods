@@ -5,12 +5,13 @@ import numpy as np
 import pandas as pd
 from pmlb import fetch_data
 import time
-
+import seaborn as sns
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedShuffleSplit
 
 from kfoldmethods.experiments import configs
-from kfoldmethods.experiments.utils import bootstrap_step, estimate_n_clusters, load_best_classifier_for_dataset
+from kfoldmethods.experiments import utils
+from kfoldmethods.experiments.utils import _compare_plot_overall, bootstrap_step, estimate_n_clusters, load_best_classifier_for_dataset
 
 
 class CompareSplittersEstimatesResults:
@@ -198,7 +199,8 @@ def analyze(args):
 
     path_true_estimates_summary = 'run_data/true_estimate/true_estimates_summary.csv'
     analyze_running_time = False
-    analyze_metrics = True
+    analyze_metrics = False
+    make_plots = True
 
     # running time
     if analyze_running_time:
@@ -234,6 +236,14 @@ def analyze(args):
             on=['dataset_name', 'classifier_name', 'metric_name'], how='inner')
         df_bias_std_summary['bias'] = df_bias_std_summary['expected_estimate'] - df_bias_std_summary['true_value']
         df_bias_std_summary.to_csv(path_run / 'bias_variance_tradeoff.csv', float_format='%.5f')
+    
+    if make_plots:
+        sns.set_theme()
+        df = pd.read_csv(path_run / 'bias_variance_tradeoff.csv')
+        utils._compare_plot_overall(df)
+        utils._compare_plot_balance(df)
+        utils._compare_plot_std_overall(df)
+        utils._compare_plot_std_balance(df)
 
 
 def select_df_results(args):

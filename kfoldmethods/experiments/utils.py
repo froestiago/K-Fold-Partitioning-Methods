@@ -5,6 +5,10 @@ import joblib
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.model_selection import ShuffleSplit
 from sklearn.utils import resample
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from kfoldmethods.experiments import configs
 
 
 def load_best_classifier_for_dataset(
@@ -55,3 +59,69 @@ def bootstrap_step(X: np.ndarray, random_state=123):
     indices = np.arange(0, n_samples)
     indices_r = resample(indices, n_samples=n_samples, random_state=random_state)
     return indices_r
+
+
+def g_name_to_str(g_name):
+    return "_".join([str(s) for s in g_name])
+
+
+def _compare_plot_overall(df):
+    groups = df.groupby(by=['metric_name', 'n_splits'])
+    
+    for i, (g_name, g) in enumerate(groups):
+        print(g_name)
+        fig, ax = plt.subplots()
+        sns.violinplot(data=g, y='splitter_method', x='bias', ax=ax)
+        fig.savefig('figs/bias_splitter_{}'.format(g_name_to_str(g_name)))
+        fig.tight_layout()
+        plt.close(fig)
+
+
+def _compare_plot_std_overall(df):
+    groups = df.groupby(by=['metric_name', 'n_splits'])
+    
+    for i, (g_name, g) in enumerate(groups):
+        print(g_name)
+        fig, ax = plt.subplots()
+        sns.violinplot(data=g, y='splitter_method', x='estimate_std', ax=ax)
+        fig.savefig('figs/std_splitter_{}'.format(g_name_to_str(g_name)))
+        fig.tight_layout()
+        plt.close(fig)
+
+
+def _compare_plot_balance(df):
+    groups = df.groupby(by=['metric_name', 'n_splits'])
+    
+    for g_name, g in groups:
+        fig, ax = plt.subplots()
+        g_balanced = g.loc[g['dataset_name'].isin(configs.datasets_balanced), :]
+        sns.violinplot(data=g_balanced, y='splitter_method', x='bias', ax=ax)
+        fig.tight_layout()
+        fig.savefig('figs/balanced_bias_splitter_{}'.format(g_name_to_str(g_name)))
+        plt.close(fig)
+
+        fig, ax = plt.subplots()
+        g_imbalanced = g.loc[g['dataset_name'].isin(configs.datasets_imb), :]
+        sns.violinplot(data=g_imbalanced, y='splitter_method', x='bias', ax=ax)
+        fig.tight_layout()
+        fig.savefig('figs/imbalanced_bias_splitter_{}'.format(g_name_to_str(g_name)))
+        plt.close(fig)
+
+
+def _compare_plot_std_balance(df):
+    groups = df.groupby(by=['metric_name', 'n_splits'])
+    
+    for g_name, g in groups:
+        fig, ax = plt.subplots()
+        g_balanced = g.loc[g['dataset_name'].isin(configs.datasets_balanced), :]
+        sns.violinplot(data=g_balanced, y='splitter_method', x='estimate_std', ax=ax)
+        fig.tight_layout()
+        fig.savefig('figs/balanced_std_splitter_{}'.format(g_name_to_str(g_name)))
+        plt.close(fig)
+
+        fig, ax = plt.subplots()
+        g_imbalanced = g.loc[g['dataset_name'].isin(configs.datasets_imb), :]
+        sns.violinplot(data=g_imbalanced, y='splitter_method', x='estimate_std', ax=ax)
+        fig.tight_layout()
+        fig.savefig('figs/imbalanced_std_splitter_{}'.format(g_name_to_str(g_name)))
+        plt.close(fig)

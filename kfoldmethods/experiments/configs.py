@@ -35,35 +35,36 @@ classifier_hyperparameters_output = "%s/classifier_hyperparameters" % run_data_d
 # datasets = datasets[::3]
 #
 datasets = [
-    'confidence', 'chess', 'analcatdata_happiness', 'analcatdata_japansolvent', 'vote', 'colic', 'dna',
-    'soybean', 'movement_libras', 'analcatdata_dmft', 'allhyper', 'appendicitis', 'page_blocks', 
-    'analcatdata_lawsuit', 'backache', 'flare', 'analcatdata_cyyoung9302',
+    'analcatdata_germangss', 'chess', 'analcatdata_happiness', 'analcatdata_japansolvent', 'vote', 'colic', 'dna',
+    'vowel', 'movement_libras', 'analcatdata_dmft', 'allrep', 'appendicitis', 'page_blocks', 
+    'new_thyroid', 'backache', 'flare', 'postoperative_patient_data',
     'hepatitis', 'analcatdata_cyyoung8092', 'car']
 
 datasets_balanced = [
-    'confidence', 'chess',  'analcatdata_happiness', 'analcatdata_japansolvent', 'vote', 'colic', 'dna',
-    'soybean', 'movement_libras', 'analcatdata_dmft']
+    'analcatdata_germangss', 'chess',  'analcatdata_happiness', 'analcatdata_japansolvent', 'vote', 'colic', 'dna',
+    'vowel', 'movement_libras', 'analcatdata_dmft']
 datasets_imb = [
-    'allhyper', 'appendicitis', 'page_blocks', 'analcatdata_lawsuit', 'backache', 'flare', 'analcatdata_cyyoung9302',
+    'allrep', 'appendicitis', 'page_blocks', 'new_thyroid', 'backache', 'flare', 'postoperative_patient_data',
     'hepatitis', 'analcatdata_cyyoung8092', 'car']
 dataset_info__output_dir = 'run_data/dataset_info'
 
+n_jobs = 8
 
-true_estimates_n_splits = 200
-true_estimates_test_size = 0.1
-true_estimates_n_jobs = 8
+true_estimates_n_splits = 100
+true_estimates_test_size = 0.4
+true_estimates_n_jobs = n_jobs
 true_estimates_random_state = 123
 
 estimate_n_clusters_n_iters = 50
 estimate_n_clusters_random_state = 123
 estimate_n_clusters_n_jobs = 5
 
-compare_splitters__n_repeats = 20
-compare_splitters__repeat_test_size = 0.1
-comapre_splitters__repeats_random_state = 456
+compare_splitters__n_repeats = 100
+compare_splitters__repeat_test_size = 0.4
+comapre_splitters__repeats_random_state = 123
 comapre_splitters__repeats_random_states = [123 + i for i in range(compare_splitters__n_repeats)]
 compare_splitters__n_splits = [2, 5, 10]
-compare_splitters__n_jobs = 8
+compare_splitters__n_jobs = n_jobs
 compare_splitters__path_n_clusters = "run_data/n_clusters_estimate/estimate_n_clusters.csv"
 
 splitter_methods = [

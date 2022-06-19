@@ -5,6 +5,7 @@ from sklearn.cluster import KMeans, MiniBatchKMeans, AgglomerativeClustering
 from sklearn.datasets import make_blobs
 import matplotlib.pyplot as plt
 import numpy as np
+from pmlb import fetch_data
 
 from kfoldmethods.datasets import pmlb_api
 from kfoldmethods.experiments import configs
@@ -79,8 +80,18 @@ def datasets_info():
     df_selected = df_selected.sort_values(by='Dataset')
     df_selected.to_csv(Path(configs.dataset_info__output_dir) / 'datasets_imb.csv', index=False)
     print(df_selected)
-    
+
+
+def min_instance_class():
+    selected = configs.datasets
+
+    for ds_name in selected:
+        X, y = fetch_data(ds_name, return_X_y=True)
+        _, n_per_class = np.unique(y, return_counts=True)
+        
+        small_class = min(n_per_class)
+        print("{}: {}".format(ds_name, small_class))
 
 
 if __name__ == "__main__":
-    datasets_info()
+    min_instance_class()
