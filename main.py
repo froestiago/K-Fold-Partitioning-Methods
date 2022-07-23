@@ -17,7 +17,10 @@ def build_experiment_subparser(subparsers):
 
     parser_experiment.add_argument(
         "-s", "--select", action="store_true", help="Select tables from run results.")
-    
+
+    parser_experiment.add_argument(
+        "-t", "--path-true-estimates", type=str, help="Path to true-estimate summary")
+
     parser_experiment.add_argument(
         "-p", "--path-run", help="Path to run containing files for analysis and selection.")
 
@@ -64,12 +67,17 @@ def build_estimate_true_metrics_subparsers(subparsers):
     parser_true_estimate.add_argument(
         "-s", "--select-metric-results", action="store_true", 
         help="Generate csv files containing only the metrics from the joblib files.")
+    parser_true_estimate.add_argument(
+        "-p", "--path-input", type=str, help="Path to true-estimate run raw artifacts")
     return parser_true_estimate
 
 
 def build_estimate_n_clusters_subparsers(subparsers):
     parser_n_clusters_estimate = subparsers.add_parser('n-clusters-estimate', help='Estimate number of clusters in each dataset.')
     parser_n_clusters_estimate.add_argument("-a", "--analyze", action="store_true", help="Analyze results of run")
+    parser_n_clusters_estimate.add_argument(
+        "-p", "--path-input", type=str, help="Path to n-clusters-estimate run raw artifacts")
+
     return parser_n_clusters_estimate
 
 

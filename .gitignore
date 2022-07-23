@@ -8,6 +8,8 @@ error*
 cache
 true_estimate_metrics/
 figs*
+run_data*
+run_final.tar.gz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

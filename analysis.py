@@ -70,7 +70,7 @@ def datasets_info():
         df_datasets['Dataset'].isin(selected), 
         ['Dataset', 'n_observations', 'n_features', 'n_classes', 'Imbalance']]
     df_selected = df_selected.sort_values(by='Dataset')
-    df_selected.to_csv(Path(configs.dataset_info__output_dir) / 'datasets.csv', index=False)
+    df_selected.to_csv(Path(configs.dataset_info__output_dir) / 'datasets_balanced.csv', index=False)
     print(df_selected)
 
     selected_imb = configs.datasets_imb
@@ -78,7 +78,15 @@ def datasets_info():
         df_datasets['Dataset'].isin(selected_imb), 
         ['Dataset', 'n_observations', 'n_features', 'n_classes', 'Imbalance']]
     df_selected = df_selected.sort_values(by='Dataset')
-    df_selected.to_csv(Path(configs.dataset_info__output_dir) / 'datasets_imb.csv', index=False)
+    df_selected.to_csv(Path(configs.dataset_info__output_dir) / 'datasets_imbalanced.csv', index=False)
+    print(df_selected)
+
+    selected = configs.datasets
+    df_selected = df_datasets.loc[
+        df_datasets['Dataset'].isin(selected), 
+        ['Dataset', 'n_observations', 'n_features', 'n_classes', 'Imbalance']]
+    df_selected = df_selected.sort_values(by='Dataset')
+    df_selected.to_csv(Path(configs.dataset_info__output_dir) / 'datasets.csv', index=False)
     print(df_selected)
 
 
@@ -94,4 +102,4 @@ def min_instance_class():
 
 
 if __name__ == "__main__":
-    min_instance_class()
+    datasets_info()

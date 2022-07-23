@@ -117,15 +117,17 @@ class TrueMetricsEstimate:
                     self.compute_clf_estimates(ds_name, clf_class_name)
 
 
-def select_metric_results():
-    path_true_estimates = Path('run_data/true_estimate')
+def select_metric_results(args):
+    path_raw = Path(args.path_input)
     
-    path_true_estimate_metrics = Path('true_estimate_metrics')
+    path_true_estimate_metrics = path_raw / "true_estimate_metrics"
     path_true_estimate_metrics.mkdir(exist_ok=True, parents=True)
-    for i in range(27):
-        print("DS INDEX: [%d/%d]" % (i, 26))
-        results = joblib.load(
-            Path("run_data/true_estimate/2022-06-18T06:10:05/results_{}_to_{}.joblib".format(i, i)))
+    n_datasets = len(configs.datasets)
+
+    for i in range(n_datasets):
+        print("DS INDEX: [%d/%d]" % (i, n_datasets))
+        results = joblib.load(path_raw / "results_{}_to_{}.joblib".format(i, i))
+
         metrics_df = results.select_metric_results()
         metrics_df = pd.DataFrame(metrics_df)
 
@@ -133,10 +135,10 @@ def select_metric_results():
         metrics_df.to_csv(str(path_true_estimate_run))
 
 
-def plot_distributions_for_datasets(path_true_estimates_csv: str):
+def plot_distributions_for_datasets(path_true_estimates_csv: str, path_outputs: Path):
     # generate ds x clf figures distributions of the results. Each figure is 1xn_metrics
     # This is to give a visual idea of the true estimates accuracy
-    path_true_estimate_distributions = Path("true_estimate_distributions")
+    path_true_estimate_distributions = path_outputs / "true_estimate_distributions"
     path_true_estimate_distributions.mkdir(exist_ok=True, parents=True)
 
     df_run = pd.read_csv(path_true_estimates_csv)
@@ -162,20 +164,22 @@ def plot_distributions_for_datasets(path_true_estimates_csv: str):
                 ax[i, j].set_xlabel(metric_name)
         
         fig.tight_layout()
-        path_fig = str(path_true_estimate_distributions / "{}_distribution.pdf".format(ds_name))
+        path_fig = str(path_true_estimate_distributions / "{}_distribution.jpg".format(ds_name))
         fig.savefig(path_fig)
         plt.close(fig)
 
 
-def table_results(path_true_estimate_metrics):
-    path_true_estimate_tables = Path("true_estimate_tables")
+def table_results(path_true_estimate_metrics: str, path_outputs: Path):
+    path_true_estimate_tables = path_outputs / "true_estimate_tables"
     path_true_estimate_tables.mkdir(exist_ok=True, parents=True)
+    n_datasets = len(configs.datasets)
+    metric_list = ['accuracy', 'f1', 'precision', 'recall', 'balanced_accuracy']
 
     # Summary of mean performance
-    for metric_name in ['accuracy', 'f1', 'precision', 'recall']:
+    for metric_name in metric_list:
         df_summary = pd.DataFrame()
 
-        for i in range(27):
+        for i in range(n_datasets):
             path_csv = str(path_true_estimate_metrics / "true_estimate_{}.csv".format(i))
             df_run = pd.read_csv(path_csv)
             # df_run = df_run[df_run['metric_name'] != 'confusion_mat']
@@ -195,10 +199,10 @@ def table_results(path_true_estimate_metrics):
             str(path_true_estimate_tables / "{}_mean.csv".format(metric_name)), float_format='%.4f')
 
     # Summary of std of performance
-    for metric_name in ['accuracy', 'f1', 'precision', 'recall']:
+    for metric_name in metric_list:
         df_summary = pd.DataFrame()
 
-        for i in range(27):
+        for i in range(n_datasets):
             path_csv = str(path_true_estimate_metrics / "true_estimate_{}.csv".format(i))
             df_run = pd.read_csv(path_csv)
             # df_run = df_run[df_run['metric_name'] != 'confusion_mat']
@@ -219,20 +223,27 @@ def table_results(path_true_estimate_metrics):
         
 
 def analyze(args):
+    path_raw = Path(args.path_input)
+
     plot_distributions = False
-    metric_tables = False
+    metric_tables = True
     build_true_estimate_summary = True
-    path_true_estimate_metrics = Path("true_estimate_metrics")
+    path_true_estimate_metrics = path_raw / "true_estimate_metrics"
+    path_outputs = path_raw / "analysis"
+
+    n_datasets = len(configs.datasets)
 
     if plot_distributions:
-        for i in range(27):
+        for i in range(n_datasets):
             path_csv = str(path_true_estimate_metrics / "true_estimate_{}.csv".format(i))
-            plot_distributions_for_datasets(path_csv)
+            plot_distributions_for_datasets(path_csv, path_outputs)
     
     if metric_tables:
-        table_results(path_true_estimate_metrics)
+        table_results(path_true_estimate_metrics, path_outputs)
     
     if build_true_estimate_summary:
+        path_true_estimates_summary = path_outputs
+
         df_true_estimates = pd.DataFrame()
         for f in path_true_estimate_metrics.glob("*.csv"):
             df_run_true_estimates = pd.read_csv(f)
@@ -244,7 +255,8 @@ def analyze(args):
         df_true_estimates_summary = df_true_estimates.groupby(
             by=['ds_name', 'classifier_name', 'metric_name']).agg(
                 true_value=('metric_result', np.mean))
-        df_true_estimates_summary.to_csv('true_estimates_summary.csv', float_format='%.4f')
+        df_true_estimates_summary.to_csv(
+            path_true_estimates_summary / 'true_estimates_summary.csv', float_format='%.4f')
 
 
 def run_true_metrics_estimate(output_dir, ds_idx_0, ds_idx_last):
@@ -262,7 +274,7 @@ def main(args):
         return
 
     if args.select_metric_results:
-        select_metric_results()
+        select_metric_results(args)
         return
     
     output_dir = Path('run_data/true_estimate') / datetime.now().isoformat(timespec='seconds')

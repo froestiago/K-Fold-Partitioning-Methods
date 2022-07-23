@@ -1,4 +1,5 @@
 from datetime import datetime
+from itertools import combinations, product
 from pathlib import Path
 import joblib
 import numpy as np
@@ -6,12 +7,13 @@ import pandas as pd
 from pmlb import fetch_data
 import time
 import seaborn as sns
+from scipy import stats
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedShuffleSplit
 
 from kfoldmethods.experiments import configs
 from kfoldmethods.experiments import utils
-from kfoldmethods.experiments.utils import _compare_plot_overall, bootstrap_step, estimate_n_clusters, load_best_classifier_for_dataset
+from kfoldmethods.experiments.utils import _compare_plot_overall, _make_samples_for_tests, bootstrap_step, estimate_n_clusters, load_best_classifier_for_dataset
 
 
 class CompareSplittersEstimatesResults:
@@ -131,7 +133,7 @@ class CompareSplittersEstimates:
             repeat_splitter = StratifiedShuffleSplit(
                 n_splits=configs.compare_splitters__n_repeats, 
                 test_size=configs.compare_splitters__repeat_test_size,
-                random_state=configs.comapre_splitters__repeats_random_state)
+                random_state=configs.compare_splitters__repeats_random_state)
             
             for repeat_id, (indices_r, _) in enumerate(repeat_splitter.split(X, y)):
                 print("---- Repeat [{}/{}]".format(
@@ -193,23 +195,25 @@ def run_compare_splitters_estimates(output_dir, idx_first, idx_last):
 
 def analyze(args):
     if args.path_run:
-        path_run = Path(args.path_run)
+        path_run = Path(args.path_run) / 'outputs'
     else:
         path_run = Path('run_data/compare_splitters_estimates/2022-06-14T00:44:36/outputs')
 
-    path_true_estimates_summary = 'run_data/true_estimate/true_estimates_summary.csv'
+    path_true_estimates_summary = Path(args.path_true_estimates)
+    
     analyze_running_time = False
     analyze_metrics = False
     make_plots = True
+    make_tests = False
 
     # running time
     if analyze_running_time:
         df_rt = pd.read_csv(path_run / 'running_time_df.csv')
-        summary_rt = df_rt.groupby(by=['dataset_name', 'splitter_method']).agg(
+        summary_rt = df_rt.groupby(by=['dataset_name', 'splitter_method','n_splits']).agg(
             running_time=('running_time', np.mean)).reset_index()
 
         summary_rt = summary_rt.pivot(
-            index='dataset_name', columns='splitter_method', values='running_time')
+            index='dataset_name', columns=['splitter_method', 'n_splits'], values='running_time')
         summary_rt = summary_rt.sort_index(key=lambda ind: ind.str.lower())
         summary_rt.to_csv(path_run / 'summary_running_time.csv', float_format='%.5f')
 
@@ -240,17 +244,60 @@ def analyze(args):
     if make_plots:
         sns.set_theme()
         df = pd.read_csv(path_run / 'bias_variance_tradeoff.csv')
-        utils._compare_plot_overall(df)
-        utils._compare_plot_balance(df)
-        utils._compare_plot_std_overall(df)
-        utils._compare_plot_std_balance(df)
+        df = df[~df['splitter_method'].str.contains('Shuffle')]
+        output_dir = path_run / 'plots'
+        output_dir.mkdir(exist_ok=True, parents=True)
+
+        utils._compare_plot_balance(df, output_dir)
+
+    if make_tests:
+        df = pd.read_csv(path_run / 'bias_variance_tradeoff.csv')
+        df = df[~df['splitter_method'].str.contains('Shuffle')]
+        metrics = ['accuracy', 'f1', 'recall', 'precision', 'balanced_accuracy']
+        n_splits_list = [2, 5, 10]
+        ds_balance = ['balanced', 'imbalanced']
+
+        for metric, n_splits, ds_balance in product(metrics, n_splits_list, ds_balance):
+            ds_list = configs.datasets_balanced if ds_balance == 'balanced' else configs.datasets_imb
+
+            df_group = df[
+                (df['metric_name'] == metric) & \
+                (df['n_splits'] == n_splits) & \
+                (df['dataset_name'].isin(ds_list))]
+
+            splitters, biases, stds = _make_samples_for_tests(df_group)
+
+            _, p_bias = stats.friedmanchisquare(*biases)
+            _, p_std = stats.friedmanchisquare(*stds)
+            print("{} {} {}: p bias {:.5f} p std {:.5f}".format(
+                ds_balance, metric, n_splits, p_bias, p_std))
+
+            bias_array = np.array(biases).transpose()
+            wins = np.bincount(np.argmin(np.abs(bias_array), axis=1))
+            idx = np.arange(0, len(biases))
+            wins_str = ["{}: {}".format(splitters[s], ws) for s, ws in zip(idx, wins)]
+            print("Wins Bias: ", " ".join(wins_str))
+
+            std_array = np.array(stds).transpose()
+            wins_std = np.bincount(np.argmin(np.abs(std_array), axis=1))
+            idx_std = np.arange(0, len(stds))
+            wins_str_std = ["{}: {}".format(splitters[s], ws) for s, ws in zip(idx_std, wins_std)]
+            print("Wins Std: ", " ".join(wins_str_std))
+
+            for i, j in combinations([k for k in range(len(splitters))], 2):
+                _, p_bias = stats.wilcoxon(biases[i], biases[j])
+                _, p_std = stats.wilcoxon(stds[i], stds[j])
+
+                print("---- {}({:.5f}, {:.5f}) vs {} ({:.5f}, {:.5f}): p_bias {:.5f} p_std {:.5f}".format(
+                    splitters[i], np.median(biases[i]), np.median(stds[i]), 
+                    splitters[j], np.median(biases[j]), np.median(stds[j]), 
+                    p_bias, p_std))
 
 
 def select_df_results(args):
     if args.path_run:
         path_run = Path(args.path_run)
-    else:
-        path_run = Path('run_data/compare_splitters_estimates/2022-06-14T00:44:36')
+
     print(path_run)
     path_outputs = path_run / 'outputs'
     path_outputs.mkdir(exist_ok=True, parents=True)

@@ -51,7 +51,7 @@ dataset_info__output_dir = 'run_data/dataset_info'
 n_jobs = 8
 
 true_estimates_n_splits = 100
-true_estimates_test_size = 0.4
+true_estimates_test_size = 0.1
 true_estimates_n_jobs = n_jobs
 true_estimates_random_state = 123
 
@@ -59,13 +59,13 @@ estimate_n_clusters_n_iters = 50
 estimate_n_clusters_random_state = 123
 estimate_n_clusters_n_jobs = 5
 
-compare_splitters__n_repeats = 100
-compare_splitters__repeat_test_size = 0.4
-comapre_splitters__repeats_random_state = 123
-comapre_splitters__repeats_random_states = [123 + i for i in range(compare_splitters__n_repeats)]
+compare_splitters__n_repeats = 20
+compare_splitters__repeat_test_size = 0.1
+compare_splitters__repeats_random_state = 456
+# comapre_splitters__repeats_random_states = [123 + i for i in range(compare_splitters__n_repeats)]
 compare_splitters__n_splits = [2, 5, 10]
 compare_splitters__n_jobs = n_jobs
-compare_splitters__path_n_clusters = "run_data/n_clusters_estimate/estimate_n_clusters.csv"
+compare_splitters__path_n_clusters = "run_data/n_clusters_estimate/2022-06-19T12:28:05/analysis/estimate_n_clusters.csv"
 
 splitter_methods = [
     ('DBSCV', DBSVC.DBSCVSplitter, {

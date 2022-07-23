@@ -77,7 +77,11 @@ def run_n_clusters_estimate(output_dir, idx_first, idx_last):
 
 def analyze(args):
     results_df = pd.DataFrame()
-    path_results = Path("run_data/n_clusters_estimate/2022-06-18T00:00:29")
+    path_results = Path(args.path_input)
+    
+    path_outputs = path_results / 'analysis'
+    path_outputs.mkdir(exist_ok=True, parents=True)
+
     for path_run in path_results.glob("*.joblib"):
         run_results = joblib.load(path_run)
         run_results_df = run_results.select_estimate_results()
@@ -90,7 +94,7 @@ def analyze(args):
         n_clusters_std=('n_clusters', np.std),
         execution_time=('execution_time', np.sum))
     
-    path_n_clusters_estimate_summary = 'estimate_n_clusters.csv'
+    path_n_clusters_estimate_summary = path_outputs / 'estimate_n_clusters.csv'
     summary.to_csv(path_n_clusters_estimate_summary, float_format='%.4f')
     
 
