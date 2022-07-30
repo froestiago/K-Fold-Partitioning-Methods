@@ -1,7 +1,6 @@
 name: splitters-env
 channels:
   - anaconda
-  - conda-forge
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
@@ -107,4 +106,4 @@ dependencies:
     - typing-extensions==4.2.0
     - urllib3==1.26.9
     - wrapt==1.14.1
-prefix: /home/thomas/anaconda3/envs/splitters-env
+prefix: /home/ubuntu/miniconda3/envs/splitters-env
