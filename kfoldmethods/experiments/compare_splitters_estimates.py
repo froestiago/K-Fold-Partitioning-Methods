@@ -231,10 +231,7 @@ def analyze(args):
 
         df_estimates_summary.reset_index(inplace=True)
         df_true_estimates_summary = pd.read_csv(path_true_estimates_summary).rename(columns={'ds_name': 'dataset_name'})
-        # print(df_estimates_summary.index)
-        # print(df_estimates_summary.columns)
-        # print(df_true_estimates_summary.index)
-        # print(df_true_estimates_summary.columns)
+
         df_bias_std_summary = pd.merge(
             df_estimates_summary, df_true_estimates_summary, 
             on=['dataset_name', 'classifier_name', 'metric_name'], how='inner')

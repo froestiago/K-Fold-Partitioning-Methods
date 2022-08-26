@@ -9,7 +9,8 @@ from sklearn.tree import DecisionTreeClassifier
 from kfoldmethods.datasets.pmlb_api import pmlb_get_ds_list
 from kfoldmethods.splitters import CBDSCV, DBSVC, DOBSCV, CBDSCV_gmeans
 
-run_data_dir = 'run_data'
+
+run_data_dir = 'run_data_review'
 pipeline = Pipeline([('scaler', MinMaxScaler()), ('clf', LogisticRegression())])
 pipeline_params = [
     {'clf': [LogisticRegression(max_iter=10010, random_state=0, class_weight='balanced')], 
@@ -31,9 +32,6 @@ tuning_grid_seach_n_jobs = 8
 tuning_grid_search_scoring = 'balanced_accuracy'
 classifier_hyperparameters_output = "%s/classifier_hyperparameters" % run_data_dir
 
-# datasets = pmlb_get_ds_list(task='classification', n_samples=(200, 2000), verbose=False)
-# datasets = datasets[::3]
-#
 datasets = [
     'analcatdata_germangss', 'chess', 'analcatdata_happiness', 'analcatdata_japansolvent', 'vote', 'colic', 'dna',
     'vowel', 'movement_libras', 'analcatdata_dmft', 'allrep', 'appendicitis', 'page_blocks', 
@@ -48,16 +46,19 @@ datasets_imb = [
     'hepatitis', 'analcatdata_cyyoung8092', 'car']
 dataset_info__output_dir = 'run_data/dataset_info'
 
-n_jobs = 8
+n_jobs = 4
 
 true_estimates_n_splits = 100
 true_estimates_test_size = 0.1
 true_estimates_n_jobs = n_jobs
 true_estimates_random_state = 123
+true_estimates__output = "%s/true_estimate" % run_data_dir
+
 
 estimate_n_clusters_n_iters = 50
 estimate_n_clusters_random_state = 123
 estimate_n_clusters_n_jobs = 5
+estimate_n_clusters__output = "%s/n_clusters_estimate" % run_data_dir
 
 compare_splitters__n_repeats = 20
 compare_splitters__repeat_test_size = 0.1

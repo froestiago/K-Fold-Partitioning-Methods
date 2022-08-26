@@ -53,7 +53,8 @@ def build_analysis_subparser(subparsers):
 
 def build_hyperparameters_search_subparsers(subparsers):
     parser_hp_search = subparsers.add_parser('hp-search', help='Analyze results of experiments.')
-    parser_hp_search.add_argument('-i', '--imbalanced', action='store_true', help='Use imbalanced datasets.')
+    parser_hp_search.add_argument(
+        "-s", "--select", action="store_true", help="Select hyperparameters for each dataset and classifier.")
     return parser_hp_search
 
 
@@ -75,8 +76,6 @@ def build_estimate_true_metrics_subparsers(subparsers):
 def build_estimate_n_clusters_subparsers(subparsers):
     parser_n_clusters_estimate = subparsers.add_parser('n-clusters-estimate', help='Estimate number of clusters in each dataset.')
     parser_n_clusters_estimate.add_argument("-a", "--analyze", action="store_true", help="Analyze results of run")
-    parser_n_clusters_estimate.add_argument(
-        "-p", "--path-input", type=str, help="Path to n-clusters-estimate run raw artifacts")
 
     return parser_n_clusters_estimate
 
@@ -107,7 +106,7 @@ def main():
         return
 
     if args.subparser_name == "hp-search":
-        tune_classifiers.tune(args)
+        tune_classifiers.main(args)
         return
 
     if args.subparser_name == "true-estimate":

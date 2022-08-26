@@ -223,7 +223,7 @@ def table_results(path_true_estimate_metrics: str, path_outputs: Path):
         
 
 def analyze(args):
-    path_raw = Path(args.path_input)
+    path_raw = Path(configs.true_estimates__output)
 
     plot_distributions = False
     metric_tables = True
@@ -277,7 +277,7 @@ def main(args):
         select_metric_results(args)
         return
     
-    output_dir = Path('run_data/true_estimate') / datetime.now().isoformat(timespec='seconds')
+    output_dir = Path(configs.true_estimates__output)
     datasets = configs.datasets
     n_datasets = len(datasets)
     step = 1

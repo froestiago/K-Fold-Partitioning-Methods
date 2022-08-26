@@ -77,7 +77,7 @@ def run_n_clusters_estimate(output_dir, idx_first, idx_last):
 
 def analyze(args):
     results_df = pd.DataFrame()
-    path_results = Path(args.path_input)
+    path_results = Path(configs.estimate_n_clusters__output)
     
     path_outputs = path_results / 'analysis'
     path_outputs.mkdir(exist_ok=True, parents=True)
@@ -104,12 +104,10 @@ def main(args):
         analyze(args)
         return
 
-    output_dir = Path('run_data/n_clusters_estimate') / datetime.now().isoformat(timespec='seconds')
+    output_dir = Path(configs.estimate_n_clusters__output)
     output_dir.mkdir(exist_ok=True, parents=True)
     n_datasets = len(configs.datasets)
     step = 3
-    # run_n_clusters_estimate(output_dir, 0, 3)
-    # run_n_clusters_estimate(output_dir, 4, 6)
     joblib.Parallel(n_jobs=configs.estimate_n_clusters_n_jobs)(
         joblib.delayed(run_n_clusters_estimate)(
             output_dir, i, min(i+step-1, n_datasets-1)) for i in range(0, n_datasets, step)
