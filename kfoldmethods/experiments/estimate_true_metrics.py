@@ -118,7 +118,7 @@ class TrueMetricsEstimate:
 
 
 def select_metric_results(args):
-    path_raw = Path(args.path_input)
+    path_raw = Path(configs.true_estimates__output)
     
     path_true_estimate_metrics = path_raw / "true_estimate_metrics"
     path_true_estimate_metrics.mkdir(exist_ok=True, parents=True)
@@ -225,7 +225,7 @@ def table_results(path_true_estimate_metrics: str, path_outputs: Path):
 def analyze(args):
     path_raw = Path(configs.true_estimates__output)
 
-    plot_distributions = False
+    plot_distributions = True
     metric_tables = True
     build_true_estimate_summary = True
     path_true_estimate_metrics = path_raw / "true_estimate_metrics"
@@ -256,7 +256,7 @@ def analyze(args):
             by=['ds_name', 'classifier_name', 'metric_name']).agg(
                 true_value=('metric_result', np.mean))
         df_true_estimates_summary.to_csv(
-            path_true_estimates_summary / 'true_estimates_summary.csv', float_format='%.4f')
+            configs.true_estimates__output_summary, float_format='%.4f')
 
 
 def run_true_metrics_estimate(output_dir, ds_idx_0, ds_idx_last):

@@ -20,6 +20,16 @@ To reproduce these experiments, run
 
 The outputs are stored in the folder `n_clusters_estimate`.
 
-## Estimate of the True Performance
-This step requires the outputs from the *Hyperparameter Tuning* and *Defining the Number of Clusters*.
+## Estimates of the True Performance
+This step requires that the instructions from *Hyperparameter Tuning* have been performed first.
+We use the hyperparameters and to find estimates of the true performance of each classifier in each dataset.
+To reproduce our results, run `python main.py true-estimate`, followed by `python main.py true-estimate -s` to retrieve CSV tables with the performance estimates for each dataset, classifier, and iteration.
+Finally, `python main.py true-estimate -a` produces some CSV files with summary results as well as some figures omitted from the paper because of space. 
+
+## Splitters Estimates of the Performance
+This step requires that the instructions from *Hyperparameter Tuning* and *Defining the Number of Clusters* have been performed first.
+To reproduce this experiment, run `python main.py compare-splitters`.
+Note that this may take up to a few days to run.
+After it, run `python main.py compare-splitters -s` to extract to CSV files the estimates from the metadata created through the previous command.
+Finally, `python main.py compare-splitters -a` generates the box plots of the performances. 
 

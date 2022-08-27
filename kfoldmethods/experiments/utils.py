@@ -13,7 +13,7 @@ from kfoldmethods.experiments import configs
 
 
 def load_best_classifier_for_dataset(
-        ds, clf_class_name, hp_dir='run_data/classifier_hyperparameters'):
+        ds, clf_class_name, hp_dir=configs.classifier_hyperparameters_output):
     path_search = Path(hp_dir) / ds / clf_class_name / 'search.joblib'
     search = joblib.load(path_search)
     return clone(search.best_estimator_)

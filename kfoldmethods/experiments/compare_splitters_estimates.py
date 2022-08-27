@@ -11,9 +11,10 @@ from scipy import stats
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedShuffleSplit
 
-from kfoldmethods.experiments import configs
+from kfoldmethods.experiments import analyze_running_times, configs, statistical_tests
 from kfoldmethods.experiments import utils
 from kfoldmethods.experiments.utils import _compare_plot_overall, _make_samples_for_tests, bootstrap_step, estimate_n_clusters, load_best_classifier_for_dataset
+from kfoldmethods.experiments import statistical_tests, analyze_running_times
 
 
 class CompareSplittersEstimatesResults:
@@ -194,17 +195,13 @@ def run_compare_splitters_estimates(output_dir, idx_first, idx_last):
 
 
 def analyze(args):
-    if args.path_run:
-        path_run = Path(args.path_run) / 'outputs'
-    else:
-        path_run = Path('run_data/compare_splitters_estimates/2022-06-14T00:44:36/outputs')
-
-    path_true_estimates_summary = Path(args.path_true_estimates)
+    path_run = Path(configs.compare_splitters__output) / 'outputs'
+    path_true_estimates_summary = Path(configs.true_estimates__output_summary)
     
-    analyze_running_time = False
-    analyze_metrics = False
+    analyze_running_time = True
+    analyze_metrics = True
     make_plots = True
-    make_tests = False
+    make_tests = True
 
     # running time
     if analyze_running_time:
@@ -216,6 +213,8 @@ def analyze(args):
             index='dataset_name', columns=['splitter_method', 'n_splits'], values='running_time')
         summary_rt = summary_rt.sort_index(key=lambda ind: ind.str.lower())
         summary_rt.to_csv(path_run / 'summary_running_time.csv', float_format='%.5f')
+
+        analyze_running_times.analyze()
 
     if analyze_metrics:
         df_m = pd.read_csv(path_run / 'metrics_df.csv')
@@ -248,54 +247,10 @@ def analyze(args):
         utils._compare_plot_balance(df, output_dir)
 
     if make_tests:
-        df = pd.read_csv(path_run / 'bias_variance_tradeoff.csv')
-        df = df[~df['splitter_method'].str.contains('Shuffle')]
-        metrics = ['accuracy', 'f1', 'recall', 'precision', 'balanced_accuracy']
-        n_splits_list = [2, 5, 10]
-        ds_balance = ['balanced', 'imbalanced']
-
-        for metric, n_splits, ds_balance in product(metrics, n_splits_list, ds_balance):
-            ds_list = configs.datasets_balanced if ds_balance == 'balanced' else configs.datasets_imb
-
-            df_group = df[
-                (df['metric_name'] == metric) & \
-                (df['n_splits'] == n_splits) & \
-                (df['dataset_name'].isin(ds_list))]
-
-            splitters, biases, stds = _make_samples_for_tests(df_group)
-
-            _, p_bias = stats.friedmanchisquare(*biases)
-            _, p_std = stats.friedmanchisquare(*stds)
-            print("{} {} {}: p bias {:.5f} p std {:.5f}".format(
-                ds_balance, metric, n_splits, p_bias, p_std))
-
-            bias_array = np.array(biases).transpose()
-            wins = np.bincount(np.argmin(np.abs(bias_array), axis=1))
-            idx = np.arange(0, len(biases))
-            wins_str = ["{}: {}".format(splitters[s], ws) for s, ws in zip(idx, wins)]
-            print("Wins Bias: ", " ".join(wins_str))
-
-            std_array = np.array(stds).transpose()
-            wins_std = np.bincount(np.argmin(np.abs(std_array), axis=1))
-            idx_std = np.arange(0, len(stds))
-            wins_str_std = ["{}: {}".format(splitters[s], ws) for s, ws in zip(idx_std, wins_std)]
-            print("Wins Std: ", " ".join(wins_str_std))
-
-            for i, j in combinations([k for k in range(len(splitters))], 2):
-                _, p_bias = stats.wilcoxon(biases[i], biases[j])
-                _, p_std = stats.wilcoxon(stds[i], stds[j])
-
-                print("---- {}({:.5f}, {:.5f}) vs {} ({:.5f}, {:.5f}): p_bias {:.5f} p_std {:.5f}".format(
-                    splitters[i], np.median(biases[i]), np.median(stds[i]), 
-                    splitters[j], np.median(biases[j]), np.median(stds[j]), 
-                    p_bias, p_std))
-
+        statistical_tests.analyze()
 
 def select_df_results(args):
-    if args.path_run:
-        path_run = Path(args.path_run)
-
-    print(path_run)
+    path_run = Path(configs.compare_splitters__output)
     path_outputs = path_run / 'outputs'
     path_outputs.mkdir(exist_ok=True, parents=True)
 
@@ -324,12 +279,10 @@ def main(args):
         select_df_results(args)
         return
 
-    output_dir = Path('run_data/compare_splitters_estimates') / datetime.now().isoformat(timespec='seconds')
+    output_dir = Path(configs.compare_splitters__output)
     output_dir.mkdir(exist_ok=True, parents=True)
     n_datasets = len(configs.datasets)
-    # n_datasets = 4
     step = 1
-    # run_compare_splitters_estimates(output_dir, 3, 3)
 
     joblib.Parallel(n_jobs=configs.compare_splitters__n_jobs)(
         joblib.delayed(run_compare_splitters_estimates)(

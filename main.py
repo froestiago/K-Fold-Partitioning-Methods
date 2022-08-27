@@ -10,7 +10,7 @@ def build_test_subparser(subparsers):
 
 
 def build_experiment_subparser(subparsers):
-    parser_experiment = subparsers.add_parser('run', help='Run experiments.')
+    parser_experiment = subparsers.add_parser('compare-splitters', help='Run experiments.')
 
     parser_experiment.add_argument(
         "-a", "--analyze", action="store_true", help="Analyze tables of run results.")
@@ -62,9 +62,6 @@ def build_estimate_true_metrics_subparsers(subparsers):
     parser_true_estimate = subparsers.add_parser('true-estimate', help='Estimate true metrics for each dataset and classifier.')
     parser_true_estimate.add_argument("-a", "--analyze", action="store_true", help="Analyze results of run")
 
-    # TODO: ds_range is deprecated. Remove it
-    parser_true_estimate.add_argument(
-        "--ds-range", type=int, nargs=2, default=(0, None), help="Which datasets to process, starting from ds 0")
     parser_true_estimate.add_argument(
         "-s", "--select-metric-results", action="store_true", 
         help="Generate csv files containing only the metrics from the joblib files.")
@@ -96,9 +93,8 @@ def main():
         test_splitters.test_all()
         return
 
-    if args.subparser_name == "run":
+    if args.subparser_name == "compare-splitters":
         compare_splitters_estimates.main(args)
-        # splitters_compare.compare_variance(args)
         return
     
     if args.subparser_name == "analyze":

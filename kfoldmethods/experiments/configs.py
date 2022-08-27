@@ -1,3 +1,4 @@
+from decimal import ROUND_HALF_DOWN
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold, ShuffleSplit, StratifiedKFold, StratifiedShuffleSplit
@@ -53,6 +54,7 @@ true_estimates_test_size = 0.1
 true_estimates_n_jobs = n_jobs
 true_estimates_random_state = 123
 true_estimates__output = "%s/true_estimate" % run_data_dir
+true_estimates__output_summary = "%s/true_estimate/analysis/true_estimates_summary.csv" % run_data_dir
 
 
 estimate_n_clusters_n_iters = 50
@@ -66,7 +68,9 @@ compare_splitters__repeats_random_state = 456
 # comapre_splitters__repeats_random_states = [123 + i for i in range(compare_splitters__n_repeats)]
 compare_splitters__n_splits = [2, 5, 10]
 compare_splitters__n_jobs = n_jobs
-compare_splitters__path_n_clusters = "run_data/n_clusters_estimate/2022-06-19T12:28:05/analysis/estimate_n_clusters.csv"
+compare_splitters__path_n_clusters = "%s/analysis/estimate_n_clusters.csv" % estimate_n_clusters__output
+compare_splitters__output = "%s/compare_splitters_estimates" % run_data_dir
+
 
 splitter_methods = [
     ('DBSCV', DBSVC.DBSCVSplitter, {
