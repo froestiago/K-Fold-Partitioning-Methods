@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 conda env create -f environtment_file.yml 
 conda activate splitters-env
 python main.py hp-search
