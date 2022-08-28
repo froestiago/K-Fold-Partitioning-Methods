@@ -1,4 +1,5 @@
 conda env create -f environtment_file.yml 
+conda activate splitters-env
 python main.py hp-search
 python main.py hp-search -s
 python main.py n-clusters-estimate
