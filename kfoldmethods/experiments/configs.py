@@ -84,10 +84,6 @@ splitter_methods = [
         'shuffle': True, 'random_state': 123}),
     ('KFold', KFold, {
         'shuffle': True, 'random_state': 123}),
-    ('StratifiedShuffleSplit', StratifiedShuffleSplit, {
-        'test_size': 0.1, 'random_state': 123}),
-    ('ShuffleSplit', ShuffleSplit, {
-        'test_size': 0.1, 'random_state': 123}),
 ]
 
 need_n_clusters = ['CBDSCV', 'CBDSCV_Mini']
