@@ -11,7 +11,7 @@ from kfoldmethods.datasets.pmlb_api import pmlb_get_ds_list
 from kfoldmethods.splitters import CBDSCV, DBSVC, DOBSCV
 
 
-run_data_dir = 'run_data_review'
+run_data_dir = 'results_bracis22'
 pipeline = Pipeline([('scaler', MinMaxScaler()), ('clf', LogisticRegression())])
 pipeline_params = [
     {'clf': [LogisticRegression(max_iter=10010, random_state=0, class_weight='balanced')], 
@@ -28,8 +28,9 @@ pipeline_params = [
         'clf__max_depth': [1, 5, 10, 15, 50]}
 ]
 
+n_jobs = 4
 tuning_folds = 10
-tuning_grid_seach_n_jobs = 8
+tuning_grid_seach_n_jobs = n_jobs
 tuning_grid_search_scoring = 'balanced_accuracy'
 classifier_hyperparameters_output = "%s/classifier_hyperparameters" % run_data_dir
 
@@ -47,8 +48,6 @@ datasets_imb = [
     'hepatitis', 'analcatdata_cyyoung8092', 'car']
 dataset_info__output_dir = '%s/dataset_info' % run_data_dir
 dataset_info__pmlb_list_path = "kfoldmethods/datasets/pmlb_datasets.csv"
-
-n_jobs = 4
 
 true_estimates_n_splits = 100
 true_estimates_test_size = 0.1
