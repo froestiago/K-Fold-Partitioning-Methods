@@ -8,7 +8,7 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
 from kfoldmethods.datasets.pmlb_api import pmlb_get_ds_list
-from kfoldmethods.splitters import CBDSCV, DBSVC, DOBSCV, CBDSCV_gmeans
+from kfoldmethods.splitters import CBDSCV, DBSVC, DOBSCV
 
 
 run_data_dir = 'run_data_review'
@@ -65,7 +65,6 @@ estimate_n_clusters__output = "%s/n_clusters_estimate" % run_data_dir
 compare_splitters__n_repeats = 20
 compare_splitters__repeat_test_size = 0.1
 compare_splitters__repeats_random_state = 456
-# comapre_splitters__repeats_random_states = [123 + i for i in range(compare_splitters__n_repeats)]
 compare_splitters__n_splits = [2, 5, 10]
 compare_splitters__n_jobs = n_jobs
 compare_splitters__path_n_clusters = "%s/analysis/estimate_n_clusters.csv" % estimate_n_clusters__output
@@ -75,19 +74,12 @@ compare_splitters__output = "%s/compare_splitters_estimates" % run_data_dir
 splitter_methods = [
     ('DBSCV', DBSVC.DBSCVSplitter, {
         'shuffle': True, 'bad_case': False, 'random_state': 123}),
-
     ('DOBSCV', DOBSCV.DOBSCVSplitter, {
         'shuffle': True, 'bad_case': False, 'random_state': 123}),
-
     ('CBDSCV', CBDSCV.CBDSCVSplitter, {
         'shuffle': True, 'random_state': 123, 'minibatch_kmeans': False}),
-
     ('CBDSCV_Mini', CBDSCV.CBDSCVSplitter, {
         'shuffle': True, 'random_state': 123, 'minibatch_kmeans': True}),
-
-    # ('CBDSCV_gmeans', CBDSCV_gmeans.CBDSCV_gmeansSplitter, {
-    #     'shuffle': True, 'bad_case': False, 'random_state': 123}),
-
     ('StratifiedKFold', StratifiedKFold, {
         'shuffle': True, 'random_state': 123}),
     ('KFold', KFold, {
@@ -98,4 +90,4 @@ splitter_methods = [
         'test_size': 0.1, 'random_state': 123}),
 ]
 
-need_n_clusters = ['CBDSCV', 'CBDSCV_Mini', 'CBDSCV_gmeans']
+need_n_clusters = ['CBDSCV', 'CBDSCV_Mini']
