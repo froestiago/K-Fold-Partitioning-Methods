@@ -1,15 +1,10 @@
 import argparse
-from kfoldmethods.experiments import splitters_compare, tune_classifiers, \
-    estimate_true_metrics, estimate_n_clusters, compare_splitters_estimates
-from kfoldmethods.tests import test_splitters
+
+from kfoldmethods.experiments import tune_classifiers, \
+    estimate_true_metrics, estimate_n_clusters, compare_splitters_estimates, datasets_info
 
 
-def build_test_subparser(subparsers):
-    parser_test = subparsers.add_parser('test', help='Run test function.')
-    return parser_test
-
-
-def build_experiment_subparser(subparsers):
+def build_compare_splitters_subparser(subparsers):
     parser_experiment = subparsers.add_parser('compare-splitters', help='Run experiments.')
 
     parser_experiment.add_argument(
@@ -79,6 +74,11 @@ def main():
     if args.subparser_name == "n-clusters-estimate":
         estimate_n_clusters.main(args)
         return
+
+    if args.subparser_name == "datasets-info":
+        datasets_info.main(args)
+        return
+    
     
 
 if __name__ == '__main__':

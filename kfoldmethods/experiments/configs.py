@@ -45,7 +45,8 @@ datasets_balanced = [
 datasets_imb = [
     'allrep', 'appendicitis', 'page_blocks', 'new_thyroid', 'backache', 'flare', 'postoperative_patient_data',
     'hepatitis', 'analcatdata_cyyoung8092', 'car']
-dataset_info__output_dir = 'run_data/dataset_info'
+dataset_info__output_dir = '%s/dataset_info' % run_data_dir
+dataset_info__pmlb_list_path = "kfoldmethods/datasets/pmlb_datasets.csv"
 
 n_jobs = 4
 
